@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\crc64.c" />
+    <ClCompile Include="..\src\node_handlers.c" />
     <ClCompile Include="..\src\test.c" />
     <ClCompile Include="..\src\endian.c" />
     <ClCompile Include="..\src\intset.c" />
@@ -24,6 +25,7 @@
   <ItemGroup>
     <ClInclude Include="..\src\crc64.h" />
     <ClInclude Include="..\src\endian.h" />
+    <ClInclude Include="..\src\node_handlers.h" />
     <ClInclude Include="..\src\intset.h" />
     <ClInclude Include="..\src\lzf.h" />
     <ClInclude Include="..\src\lzfP.h" />

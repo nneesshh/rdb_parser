@@ -15,7 +15,7 @@
 #include "crc64.h"
 #include "endian.h"
 
-#define MAGIC_STR  "REDIS"
+#include "node_handlers.h"
 
 #define RDB_PARSE_PHASE_HEADER    0
 #define RDB_PARSE_PHASE_READ_KEY  1
@@ -220,15 +220,15 @@ __read_lzf_string(rdb_parser_t *parser, nx_buf_t *b, size_t offset, nx_str_t *ou
     if (nx_buf_size(b) < offset + parsed + clen)
         return 0;
 
-	cstr = b->pos + offset + parsed;
-	str = nx_palloc(parser->pool, len + 1);
+    cstr = b->pos + offset + parsed;
+    str = nx_palloc(parser->pool, len + 1);
     if ((ret = lzf_decompress(cstr, clen, str, len)) == 0)
         goto FAILED;
 
-	str[len] = '\0';
-	nx_str_set2(out, str, len);
+    str[len] = '\0';
+    nx_str_set2(out, str, len);
 
-	parsed += clen;
+    parsed += clen;
     return parsed;
 
 FAILED:
@@ -281,7 +281,7 @@ __read_string(rdb_parser_t *parser, nx_buf_t *b, size_t offset, nx_str_t *out)
     size_t parsed = 0, n;
     uint8_t is_encoded;
     uint32_t len;
-	char *str;
+    char *str;
     int32_t enc_len;
 
     if ((n = __read_store_len(parser, b, offset, &is_encoded, &len)) == 0)
@@ -300,9 +300,9 @@ __read_string(rdb_parser_t *parser, nx_buf_t *b, size_t offset, nx_str_t *out)
 
             str = nx_palloc(parser->pool, 30);
             sprintf(str, "%ld", enc_len);
-			nx_str_set2(out, str, strlen(str));
+            nx_str_set2(out, str, strlen(str));
 
-			parsed += n;
+            parsed += n;
             break;
 
         case REDIS_RDB_ENC_LZF:
@@ -322,10 +322,10 @@ __read_string(rdb_parser_t *parser, nx_buf_t *b, size_t offset, nx_str_t *out)
             return 0;
         }
 
-		str = nx_palloc(parser->pool, len + 1);
+        str = nx_palloc(parser->pool, len + 1);
         nx_memcpy(str, b->pos + offset + parsed, len);
-		str[len] = '\0';
-		nx_str_set2(out, str, len);
+        str[len] = '\0';
+        nx_str_set2(out, str, len);
 
         parsed += len;
     }
@@ -381,10 +381,10 @@ static size_t
 __load_intset_value(rdb_parser_t *parser, nx_buf_t *b, size_t offset, rdb_kv_chain_t **vall, uint32_t *size)
 {
     size_t parsed = 0, n;
-	nx_str_t str;
-	uint32_t i;
+    nx_str_t str;
+    uint32_t i;
     int64_t v64;
-	char *s64;
+    char *s64;
     intset_t *is;
 
     rdb_kv_chain_t *ln, **ll;
@@ -401,17 +401,17 @@ __load_intset_value(rdb_parser_t *parser, nx_buf_t *b, size_t offset, rdb_kv_cha
     for (i = 0; i < is->length; ++i) {
         intset_get(is, i, &v64);
 
-		ln = alloc_rdb_kv_chain_link(parser, ll);
+        ln = alloc_rdb_kv_chain_link(parser, ll);
 
         s64 = nx_palloc(parser->pool, 30);
         sprintf(s64, "%lld", v64);
-		nx_str_set2(&ln->kv->val, s64, strlen(s64));
+        nx_str_set2(&ln->kv->val, s64, strlen(s64));
 
         ll = &ln;
     }
 
-	(*size) = is->length;
-	nx_pfree(parser->pool, str.data);
+    (*size) = is->length;
+    nx_pfree(parser->pool, str.data);
     return parsed;
 }
 
@@ -429,7 +429,7 @@ __load_zllist_value(rdb_parser_t *parser, nx_buf_t *b, size_t offset, rdb_kv_cha
     parsed += n;
     
     load_ziplist_list_or_set(parser, str.data, vall, size);
-	nx_pfree(parser->pool, str.data);
+    nx_pfree(parser->pool, str.data);
     return parsed;
 }
 
@@ -447,7 +447,7 @@ __load_zipmap_value(rdb_parser_t *parser, nx_buf_t *b, size_t offset, rdb_kv_cha
     parsed += n;
 
     load_zipmap(parser, str.data, vall, size);
-	nx_pfree(parser->pool, str.data);
+    nx_pfree(parser->pool, str.data);
     return parsed;
 }
 
@@ -465,7 +465,7 @@ __load_ziplist_value(rdb_parser_t *parser, nx_buf_t *b, size_t offset, rdb_kv_ch
     parsed += n;
 
     load_ziplist_hash_or_zset(parser, str.data, vall, size);
-	nx_pfree(parser->pool, str.data);
+    nx_pfree(parser->pool, str.data);
     return parsed;
 }
 
@@ -475,7 +475,7 @@ __load_list_or_set_value(rdb_parser_t *parser, nx_buf_t *b, size_t offset, rdb_k
 {
     size_t parsed = 0, n;
     uint32_t i, len;
-	nx_str_t str;
+    nx_str_t str;
 
     rdb_kv_chain_t *ln, **ll;
     
@@ -495,7 +495,7 @@ __load_list_or_set_value(rdb_parser_t *parser, nx_buf_t *b, size_t offset, rdb_k
         parsed += n;
 
         ln = alloc_rdb_kv_chain_link(parser, ll);
-		nx_str_set2(&ln->kv->val, str.data, str.len);
+        nx_str_set2(&ln->kv->val, str.data, str.len);
         ll = &ln;
     }
 
@@ -535,8 +535,8 @@ __load_hash_or_zset_value(rdb_parser_t *parser, nx_buf_t *b, size_t offset, rdb_
         parsed += n;
 
         ln = alloc_rdb_kv_chain_link(parser, ll);
-		nx_str_set2(&ln->kv->key, key.data, key.len);
-		nx_str_set2(&ln->kv->val, val.data, val.len);
+        nx_str_set2(&ln->kv->key, key.data, key.len);
+        nx_str_set2(&ln->kv->val, val.data, val.len);
         ll = &ln;
     }
 
@@ -631,8 +631,8 @@ alloc_rdb_kv_chain_link(rdb_parser_t *parser, rdb_kv_chain_t **ll)
     }
 
     cl->kv = nx_palloc(parser->pool, sizeof(rdb_kv_t));
-	nx_str_null(&cl->kv->key);
-	nx_str_null(&cl->kv->val);
+    nx_str_null(&cl->kv->key);
+    nx_str_null(&cl->kv->val);
     cl->next = NULL;
     return cl;
 }
@@ -660,8 +660,8 @@ alloc_rdb_node_chain_link(rdb_parser_t *parser, rdb_node_chain_t **ll)
     cl->node = nx_palloc(parser->pool, sizeof(rdb_node_t));
     cl->node->expire = -1;
     cl->node->type = 0;
-	nx_str_null(&cl->node->key);
-	nx_str_null(&cl->node->val);
+    nx_str_null(&cl->node->key);
+    nx_str_null(&cl->node->val);
     cl->node->vall = NULL;
     cl->node->size = 0;
     cl->next = NULL;
@@ -682,8 +682,14 @@ create_rdb_parser()
 
     p->pool = nx_create_pool(4096);
     p->in_b = nx_create_temp_buf(pool, 4096);
-	p->root = NULL;
+
+    p->root = NULL;
+
     p->handler = NULL;
+    p->tmp_b = NULL;
+    p->phase = 0;
+    p->state = 0;
+    p->ready = 0;
 
     return p;
 }
@@ -697,34 +703,34 @@ destroy_rdb_parser(rdb_parser_t *parser)
 }
 
 
-rdb_node_handler_t *
-create_rdb_node_handler(rdb_parser_t *parser, uint8_t phase)
+rdb_node_parser_t *
+create_node_handler(rdb_parser_t *parser, uint8_t phase)
 {
-	rdb_node_handler_t *handler = nx_alloc(sizeof(rdb_node_handler_t));
-	handler->phase = phase;
-	handler->ready = 0;
-	handler->state = 0;
-	handler->consume = NULL;
-	handler->tmp_b = NULL;
+    rdb_node_parser_t *handler = nx_alloc(sizeof(rdb_node_parser_t));
+    handler->phase = phase;
+    handler->ready = 0;
+    handler->state = 0;
+    handler->consume = NULL;
+    handler->tmp_b = NULL;
 
-	switch (phase) {
-	case RDB_PARSE_PHASE_HEADER:
+    switch (phase) {
+    case RDB_PARSE_PHASE_HEADER:
 
 #define REDIS_AUX_FIELDS        0xfa
 #define REDIS_EXPIRE_MS         0xfc
 #define REDIS_EXPIRE_SEC        0xfd
 #define REDIS_DB_SELECTOR       0xfe
 #define REDIS_EOF               0xff
-	case REDIS_EOF:
-		break;
+    case REDIS_EOF:
+        break;
 
 
 
-	}
+    }
 
-	handler->consume = NULL;
-	handler->tmp_b = NULL;
-	return handler;
+    handler->consume = NULL;
+    handler->tmp_b = NULL;
+    return handler;
 }
 
 
@@ -778,7 +784,7 @@ parse_node(rdb_parser_t *parser, nx_buf_t *b, size_t offset, uint8_t type)
     ln = alloc_rdb_node_chain_link(parser, &parser->root);
     ln->node->expire = expire;
     ln->node->type = type;
-	nx_str_set2(&ln->node->key, key.data, key.len);
+    nx_str_set2(&ln->node->key, key.data, key.len);
 
     /* value */
     if ((n = __load_value(parser, b, offset + parsed, type, ln->node)) == 0) {
@@ -815,7 +821,7 @@ rdb_parse_file(const char *path)
     /* read file into buffer */
     cl = alloc_temp_buf_chain_link(parser, 50, &parser->busy);
     ++parser->nbusy;
-	b = cl->buf;
+    b = cl->buf;
 
     nbytes = fread(b->pos, 1, (b->end - b->start), rdb_fp);
     if (nbytes <= 0)
@@ -845,10 +851,10 @@ rdb_parse_file(const char *path)
 
     while (1) {
 
-		if (!parser->handler->ready) {
-			parser->handler->consume(b);
-			continue;
-		}
+        if (!parser->handler->ready) {
+            parser->handler->consume(b);
+            continue;
+        }
 
         if ((n = __read_kv_type(parser, b, noffset, &type)) == 0) {
             rc = REDIS_RDB_PARSE_ERROR_PREMATURE;
