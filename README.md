@@ -1,2 +1,7 @@
 # rdb_parser
-test redis rdb parse
+
+test a parser of rdb
+
+## Features
+
+- testing

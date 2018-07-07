@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{9f684e67-971e-4ab0-87e2-423a5a91ffca}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\lzf_d.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ziplist.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\zipmap.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\crc64.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\endian.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\intset.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\nx_buf.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\test.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\rdb_parser.c">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\lzf.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\lzfP.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ziplist.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\zipmap.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\crc64.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\endian.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\intset.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\nx_buf.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\rdb_parser.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
