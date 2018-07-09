@@ -33,7 +33,28 @@
     <ClCompile Include="..\src\rdb_parser.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\node_handlers.c">
+    <ClCompile Include="..\src\build_header.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\build_body_db_selector.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\build_helper.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\build_body_kv.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\build_factory.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\build_body_aux_fields.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\build_footer.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\build_body_kv_load_value.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -65,7 +86,34 @@
     <ClInclude Include="..\src\rdb_parser.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\node_handlers.h">
+    <ClInclude Include="..\src\node_value_handlers.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\rdb_parser_def.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\build_header.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\build_body_db_selector.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\build_helper.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\build_body_kv.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\build_factory.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\build_body_aux_fields.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\build_footer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\build_body_kv_load_value.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

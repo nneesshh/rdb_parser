@@ -11,8 +11,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\build_body_aux_fields.c" />
+    <ClCompile Include="..\src\build_body_db_selector.c" />
+    <ClCompile Include="..\src\build_body_kv.c" />
+    <ClCompile Include="..\src\build_body_kv_load_value.c" />
+    <ClCompile Include="..\src\build_footer.c" />
+    <ClCompile Include="..\src\build_header.c" />
+    <ClCompile Include="..\src\build_helper.c" />
     <ClCompile Include="..\src\crc64.c" />
-    <ClCompile Include="..\src\node_handlers.c" />
+    <ClCompile Include="..\src\build_factory.c" />
     <ClCompile Include="..\src\test.c" />
     <ClCompile Include="..\src\endian.c" />
     <ClCompile Include="..\src\intset.c" />
@@ -23,14 +30,23 @@
     <ClCompile Include="..\src\zipmap.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\build_body_aux_fields.h" />
+    <ClInclude Include="..\src\build_body_db_selector.h" />
+    <ClInclude Include="..\src\build_body_kv.h" />
+    <ClInclude Include="..\src\build_body_kv_load_value.h" />
+    <ClInclude Include="..\src\build_footer.h" />
+    <ClInclude Include="..\src\build_header.h" />
+    <ClInclude Include="..\src\build_helper.h" />
     <ClInclude Include="..\src\crc64.h" />
     <ClInclude Include="..\src\endian.h" />
-    <ClInclude Include="..\src\node_handlers.h" />
     <ClInclude Include="..\src\intset.h" />
     <ClInclude Include="..\src\lzf.h" />
     <ClInclude Include="..\src\lzfP.h" />
+    <ClInclude Include="..\src\build_factory.h" />
+    <ClInclude Include="..\src\node_value_handlers.h" />
     <ClInclude Include="..\src\rdb_parser.h" />
     <ClInclude Include="..\src\nx_buf.h" />
+    <ClInclude Include="..\src\rdb_parser_def.h" />
     <ClInclude Include="..\src\ziplist.h" />
     <ClInclude Include="..\src\zipmap.h" />
   </ItemGroup>
