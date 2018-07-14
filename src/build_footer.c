@@ -1,34 +1,30 @@
 #include "build_factory.h"
 
-static size_t
-__read_checksum(rdb_parser_t *rp, nx_buf_t *b, uint64_t *out)
-{
-	size_t parsed = 0, n;
-	uint32_t selector;
+#include <assert.h>
 
-	if ((n = read_store_len(rp, b, 0, NULL, &selector)) == 0)
-		return 0;
-
-	parsed += n;
-
-	(*out) = selector;
-	return parsed;
-}
+#include "endian.h"
 
 int
 build_footer(rdb_parser_t *rp, nx_buf_t *b)
 {
-	size_t n, bytes;
-	uint64_t checksum;
+#ifdef CHECK_CRC
+    size_t bytes;
+    uint64_t checksum;
 
-	if ((n = __read_checksum(rp, b, &checksum)) == 0) {
-		return RDB_PHASE_BUILD_ERROR_PREMATURE;
-	}
+    rdb_node_t *node;
 
-	bytes = n;
+    node = rp->cur_ln->node;
 
-	/* ok */
-	calc_crc(rp, b, bytes);
-	rp->cur_nb->ready = 1;
-	return RDB_PHASE_BUILD_OK;
+    if (rp->version > CHECKSUM_VERSION_MIN) {
+        bytes = 8;
+        if (nx_buf_size(b) < bytes) {
+            return NODE_BUILD_ERROR_PREMATURE;
+        }
+
+        checksum = (*(uint64_t *)b->pos);
+        node->checksum = checksum;
+        assert(rp->chksum == node->checksum);
+    }
+#endif
+    return NODE_BUILD_OVER;
 }

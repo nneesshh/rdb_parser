@@ -1,9 +1,9 @@
 #pragma once
 
-#include "rdb_parser.h"
+#include "rdb_parser_def.h"
 
-void load_zipmap(rdb_parser_t *parser, const char *zm, rdb_kv_chain_t **vall, uint32_t *size);
+void load_zipmap(rdb_parser_t *rp, const char *zm, rdb_kv_chain_t **vall, uint32_t *size);
 
-void zipmap_dump(rdb_parser_t *parser, const char *s);
+void zipmap_dump(rdb_parser_t *rp, const char *s);
 
 /* EOF */

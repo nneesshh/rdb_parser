@@ -5,7 +5,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "mysnprintf.h"
 #include "endian.h"
+#include "build_helper.h"
 
 static uint32_t
 __ziplist_prev_len_size(const char *s)
@@ -84,11 +86,11 @@ __ziplist_entry_size(const char *entry)
 }
 
 static char*
-__ziplist_entry_str(nx_pool_t *pool, const char *entry)
+__ziplist_entry_str(nx_pool_t *pool, const char *entry, uint32_t *out)
 {
     uint8_t enc;
     uint32_t pre_len_size,len_size = 1, slen;
-    char *content, *str = NULL;
+    char *content, *s = NULL;
 
     pre_len_size = __ziplist_prev_len_size(entry);
     enc = entry[pre_len_size] & ZIP_ENC_STR_MASK;
@@ -100,11 +102,13 @@ __ziplist_entry_str(nx_pool_t *pool, const char *entry)
       || enc == ZIP_ENC_STR_32B) {
         
         slen = __ziplist_entry_nx_strlen(entry);
-		str = nx_palloc(pool, slen + 1);
-        nx_memcpy(str, content, slen);
-        str[slen] = '\0';
+        s = nx_palloc(pool, slen + 1);
+        nx_memcpy(s, content, slen);
+        s[slen] = '\0';
     }
-    return str;
+
+    (*out) = slen;
+    return s;
 }
 
 static uint8_t
@@ -124,21 +128,26 @@ __ziplist_entry_int(const char *entry, int64_t *v)
     
     // add one byte for encode.
     if (enc == ZIP_ENC_INT8) {
+        v8 = 0;
         nx_memcpy(&v8, content + 1, sizeof(int8_t));
         *v = v8;
     } else if (enc == ZIP_ENC_INT16) {
+        v16 = 0;
         nx_memcpy(&v16, content + 1, sizeof(int16_t));
         memrev16ifbe(&v16);
         *v = v16;
     } else if (enc == ZIP_ENC_INT24) {
+        v32 = 0;
         nx_memcpy(&v32, content + 1, 3);
         memrev32ifbe(&v32);
         *v = v32;
     } else if (enc == ZIP_ENC_INT32) {
+        v32 = 0;
         nx_memcpy(&v32, content + 1, sizeof(int32_t));
         memrev32ifbe(&v32);
         *v = v32;
     } else if (enc == ZIP_ENC_INT64){
+        v64 = 0;
         nx_memcpy(&v64, content + 1, sizeof(int64_t));
         memrev64ifbe(&v64);
         *v = v64;
@@ -148,99 +157,99 @@ __ziplist_entry_int(const char *entry, int64_t *v)
     } else {
         return 0;
     }
-  
     return  1;
 }
 
-
 void
-load_ziplist_list_or_set (rdb_parser_t *parser, const char *zl, rdb_kv_chain_t **vall, uint32_t *size)
+load_ziplist_list_or_set (rdb_parser_t *rp, const char *zl, rdb_kv_chain_t **vall, uint32_t *size)
 {
-	uint32_t len = 0;
+    uint32_t len = 0, slen;
     int64_t v;
-    char *entry, *str;
+    char *entry, *s64;
 
-	rdb_kv_chain_t *ln, **ll;
+    rdb_kv_chain_t *ln, **ll;
 
-	ll = vall;
+    ll = vall;
 
     entry = (char *)ZL_ENTRY(zl);
     while (!ZIP_IS_END(entry)) {
 
         if (__ziplist_entry_is_str(entry)) {
-            str = __ziplist_entry_str(parser->pool, entry); 
+            s64 = __ziplist_entry_str(rp->pool, entry, &slen); 
         } else {
             if(__ziplist_entry_int(entry, &v) > 0) {
-				str = nx_palloc(parser->pool, 30);
-				sprintf(str, "%lld", v);
+                s64 = nx_palloc(rp->pool, 30);
+                o_snprintf(s64, 30, "%lld", v);
+                slen = nx_strlen(s64);
             }
         }
 
-		ln = alloc_rdb_kv_chain_link(parser, ll);
-		nx_str_set2(&ln->kv->val, str, nx_strlen(str));
-		ll = &ln;
+        ln = alloc_rdb_kv_chain_link(rp, ll);
+        nx_str_set2(&ln->kv->val, s64, slen);
+        ll = &ln;
 
-		++len;
+        ++len;
         entry += __ziplist_entry_size(entry);
     }
 
-	(*size) = len;
+    (*size) = len;
 }
 
-
 void
-load_ziplist_hash_or_zset(rdb_parser_t *parser, const char *zl, rdb_kv_chain_t **vall, uint32_t *size)
+load_ziplist_hash_or_zset(rdb_parser_t *rp, const char *zl, rdb_kv_chain_t **vall, uint32_t *size)
 {
-	uint32_t len = 0;
+    uint32_t len = 0, klen, vlen;
     int64_t v;
     char *entry, *key, *val;
 
-	rdb_kv_chain_t *ln, **ll;
+    rdb_kv_chain_t *ln, **ll;
 
-	ll = vall;
+    ll = vall;
 
     entry = (char *)ZL_ENTRY(zl);
     while (!ZIP_IS_END(entry)) {
 
-		/* key */
+        /* key */
         if (__ziplist_entry_is_str(entry)) {
-            key = __ziplist_entry_str(parser->pool, entry);
+            key = __ziplist_entry_str(rp->pool, entry, &klen);
         } else {
             if(__ziplist_entry_int(entry, &v) > 0) {
-				key = nx_palloc(parser->pool, 30);
-				sprintf(key, "%lld", v);
+                key = nx_palloc(rp->pool, 30);
+                o_snprintf(key, 30, "%lld", v);
+                klen = nx_strlen(key);
             }
         }
-		entry += __ziplist_entry_size(entry);
+        entry += __ziplist_entry_size(entry);
 
-		/* value */
-		if (__ziplist_entry_is_str(entry)) {
-			val = __ziplist_entry_str(parser->pool, entry);
-		}
-		else {
-			if (__ziplist_entry_int(entry, &v) > 0) {
-				val = nx_palloc(parser->pool, 30);
-				sprintf(val, "%lld", v);
-			}
-		}
+        /* value */
+        if (__ziplist_entry_is_str(entry)) {
+            val = __ziplist_entry_str(rp->pool, entry, &vlen);
+        }
+        else {
+            if (__ziplist_entry_int(entry, &v) > 0) {
+                val = nx_palloc(rp->pool, 30);
+                o_snprintf(val, 30, "%lld", v);
+                vlen = nx_strlen(val);
+            }
+        }
+        entry += __ziplist_entry_size(entry);
 
-		ln = alloc_rdb_kv_chain_link(parser, ll);
-		nx_str_set2(&ln->kv->key, key, nx_strlen(key));
-		nx_str_set2(&ln->kv->val, val, nx_strlen(val));
-		ll = &ln;
+        ln = alloc_rdb_kv_chain_link(rp, ll);
+        nx_str_set2(&ln->kv->key, key, klen);
+        nx_str_set2(&ln->kv->val, val, vlen);
+        ll = &ln;
 
-		++len;
+        ++len;
     }
 
-	(*size) = len;
+    (*size) = len;
 }
 
-
 void
-ziplist_dump(rdb_parser_t *parser, char *s)
+ziplist_dump(rdb_parser_t *rp, const char *s)
 {
-    uint32_t i = 0, len;
-    char *entry, *str;
+    uint32_t i = 0, len, tmplen;
+    char *entry, *tmp;
 
     printf("ziplist { \n");
     printf("bytes: %u\n", ZL_BYTES(s));
@@ -249,9 +258,9 @@ ziplist_dump(rdb_parser_t *parser, char *s)
     entry = (char *)ZL_ENTRY(s);
     while (!ZIP_IS_END(entry)) {
         if (__ziplist_entry_is_str(entry)) {
-            str = __ziplist_entry_str(parser->pool, entry);
-            if (str) {
-                printf("str value: %s\n", str); 
+            tmp = __ziplist_entry_str(rp->pool, entry, &tmplen);
+            if (tmp) {
+                printf("str value: %s -- %d\n", tmp, tmplen); 
             }
         } else {
             int64_t v;

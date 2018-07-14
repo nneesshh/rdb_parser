@@ -31,9 +31,9 @@ typedef struct {
     char entrys[0];
 } ziplist;
 
-void load_ziplist_hash_or_zset(rdb_parser_t *parser, const char *zl, rdb_kv_chain_t **vall, uint32_t *size);
-void load_ziplist_list_or_set(rdb_parser_t *parser, const char *zl, rdb_kv_chain_t **vall, uint32_t *size);
+void load_ziplist_hash_or_zset(rdb_parser_t *rp, const char *zl, rdb_kv_chain_t **vall, uint32_t *size);
+void load_ziplist_list_or_set(rdb_parser_t *rp, const char *zl, rdb_kv_chain_t **vall, uint32_t *size);
 
-void ziplist_dump(rdb_parser_t *parser, const char *s);
+void ziplist_dump(rdb_parser_t *rp, const char *s);
 
 /* EOF */

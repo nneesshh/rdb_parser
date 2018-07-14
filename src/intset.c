@@ -16,14 +16,17 @@ intset_get(intset_t *is, uint32_t pos, int64_t *v)
     if(pos >= is->length) return 0;
 
     if (is->encoding == sizeof(int64_t)) {
+        v64 = 0;
         memcpy(&v64, (int64_t*)is->contents + pos, sizeof(int64_t));
         memrev64ifbe(&v64);
         *v = v64;
     } else if (is->encoding == sizeof(int32_t)) {
+        v32 = 0;
         memcpy(&v32, (int32_t*)is->contents + pos, sizeof(int32_t));
         memrev32ifbe(&v32);
         *v = v32;
     } else {
+        v16 = 0;
         memcpy(&v16, (int16_t*)is->contents + pos, sizeof(int16_t));
         memrev16ifbe(&v16);
         *v = v16;

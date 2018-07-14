@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <memory.h>
 
+
 static INLINE void *nx_palloc_small(nx_pool_t *pool, size_t size, u_int align);
 static void *nx_palloc_block(nx_pool_t *pool, size_t size);
 static void *nx_palloc_large(nx_pool_t *pool, size_t size);
@@ -11,107 +12,107 @@ static void *nx_palloc_large(nx_pool_t *pool, size_t size);
 void *
 nx_alloc(size_t size)
 {
-	void  *p;
+    void  *p;
 
-	p = malloc(size);
-	if (p == NULL) {
-		return NULL;
-	}
-	return p;
+    p = malloc(size);
+    if (p == NULL) {
+        return NULL;
+    }
+    return p;
 }
 
 
 void *
 nx_calloc(size_t size)
 {
-	void  *p;
+    void  *p;
 
-	p = nx_alloc(size);
+    p = nx_alloc(size);
 
-	if (p) {
-		nx_memzero(p, size);
-	}
+    if (p) {
+        nx_memzero(p, size);
+    }
 
-	return p;
+    return p;
 }
 
 
 nx_pool_t *
 nx_create_pool(size_t size)
 {
-	nx_pool_t  *p;
+    nx_pool_t  *p;
 
-	p = nx_memalign(NX_POOL_ALIGNMENT, size);
-	if (p == NULL) {
-		return NULL;
-	}
+    p = nx_memalign(NX_POOL_ALIGNMENT, size);
+    if (p == NULL) {
+        return NULL;
+    }
 
-	p->d.last = (u_char *)p + sizeof(nx_pool_t);
-	p->d.end = (u_char *)p + size;
-	p->d.next = NULL;
-	p->d.failed = 0;
+    p->d.last = (u_char *)p + sizeof(nx_pool_t);
+    p->d.end = (u_char *)p + size;
+    p->d.next = NULL;
+    p->d.failed = 0;
 
-	size = size - sizeof(nx_pool_t);
-	p->max = (size < NX_MAX_ALLOC_FROM_POOL) ? size : NX_MAX_ALLOC_FROM_POOL;
+    size = size - sizeof(nx_pool_t);
+    p->max = (size < NX_MAX_ALLOC_FROM_POOL) ? size : NX_MAX_ALLOC_FROM_POOL;
 
-	p->current = p;
-	p->chain = NULL;
-	p->large = NULL;
-	p->cleanup = NULL;
+    p->current = p;
+    p->chain = NULL;
+    p->large = NULL;
+    p->cleanup = NULL;
 
-	return p;
+    return p;
 }
 
 
 void
 nx_destroy_pool(nx_pool_t *pool)
 {
-	nx_pool_t          *p, *n;
-	nx_pool_large_t    *l;
-	nx_pool_cleanup_t  *c;
+    nx_pool_t          *p, *n;
+    nx_pool_large_t    *l;
+    nx_pool_cleanup_t  *c;
 
-	for (c = pool->cleanup; c; c = c->next) {
-		if (c->handler) {
-			c->handler(c->data);
-		}
-	}
+    for (c = pool->cleanup; c; c = c->next) {
+        if (c->handler) {
+            c->handler(c->data);
+        }
+    }
 
-	for (l = pool->large; l; l = l->next) {
-		if (l->alloc) {
-			nx_free(l->alloc);
-		}
-	}
+    for (l = pool->large; l; l = l->next) {
+        if (l->alloc) {
+            nx_free(l->alloc);
+        }
+    }
 
-	for (p = pool, n = pool->d.next; /* void */; p = n, n = n->d.next) {
-		nx_free(p);
+    for (p = pool, n = pool->d.next; /* void */; p = n, n = n->d.next) {
+        nx_free(p);
 
-		if (n == NULL) {
-			break;
-		}
-	}
+        if (n == NULL) {
+            break;
+        }
+    }
 }
 
 
 void
 nx_reset_pool(nx_pool_t *pool)
 {
-	nx_pool_t        *p;
-	nx_pool_large_t  *l;
+    nx_pool_t        *p;
+    nx_pool_large_t  *l;
 
-	for (l = pool->large; l; l = l->next) {
-		if (l->alloc) {
-			nx_free(l->alloc);
-		}
-	}
+    for (l = pool->large; l; l = l->next) {
+        if (l->alloc) {
+            nx_free(l->alloc);
+        }
+    }
 
-	for (p = pool; p; p = p->d.next) {
-		p->d.last = (u_char *)p + sizeof(nx_pool_t);
-		p->d.failed = 0;
-	}
+    for (p = pool; p; p = p->d.next) {
+        p->d.last = (u_char *)p + sizeof(nx_pool_t);
+        p->d.failed = 0;
+    }
 
-	pool->current = pool;
-	pool->chain = NULL;
-	pool->large = NULL;
+    pool->current = pool;
+    pool->chain = NULL;
+    pool->large = NULL;
 }
 
 
@@ -119,12 +120,12 @@ void *
 nx_palloc(nx_pool_t *pool, size_t size)
 {
 #if !(NX_DEBUG_PALLOC)
-	if (size <= pool->max) {
-		return nx_palloc_small(pool, size, 1);
-	}
+    if (size <= pool->max) {
+        return nx_palloc_small(pool, size, 1);
+    }
 #endif
 
-	return nx_palloc_large(pool, size);
+    return nx_palloc_large(pool, size);
 }
 
 
@@ -132,210 +133,210 @@ void *
 nx_pnalloc(nx_pool_t *pool, size_t size)
 {
 #if !(NX_DEBUG_PALLOC)
-	if (size <= pool->max) {
-		return nx_palloc_small(pool, size, 0);
-	}
+    if (size <= pool->max) {
+        return nx_palloc_small(pool, size, 0);
+    }
 #endif
 
-	return nx_palloc_large(pool, size);
+    return nx_palloc_large(pool, size);
 }
 
 
 static INLINE void *
 nx_palloc_small(nx_pool_t *pool, size_t size, u_int align)
 {
-	u_char      *m;
-	nx_pool_t  *p;
+    u_char     *m;
+    nx_pool_t  *p;
 
-	p = pool->current;
+    p = pool->current;
 
-	do {
-		m = p->d.last;
+    do {
+        m = p->d.last;
 
-		if (align) {
-			m = nx_align_ptr(m, NX_ALIGNMENT);
-		}
+        if (align) {
+            m = nx_align_ptr(m, NX_ALIGNMENT);
+        }
 
-		if ((size_t)(p->d.end - m) >= size) {
-			p->d.last = m + size;
+        if ((size_t)(p->d.end - m) >= size) {
+            p->d.last = m + size;
 
-			return m;
-		}
+            return m;
+        }
 
-		p = p->d.next;
+        p = p->d.next;
 
-	} while (p);
+    } while (p);
 
-	return nx_palloc_block(pool, size);
+    return nx_palloc_block(pool, size);
 }
 
 
 static void *
 nx_palloc_block(nx_pool_t *pool, size_t size)
 {
-	u_char      *m;
-	size_t       psize;
-	nx_pool_t  *p, *new;
+    u_char     *m;
+    size_t      psize;
+    nx_pool_t  *p, *_new;
 
-	psize = (size_t)(pool->d.end - (u_char *)pool);
+    psize = (size_t)(pool->d.end - (u_char *)pool);
 
-	m = nx_memalign(NX_POOL_ALIGNMENT, psize);
-	if (m == NULL) {
-		return NULL;
-	}
+    m = nx_memalign(NX_POOL_ALIGNMENT, psize);
+    if (m == NULL) {
+        return NULL;
+    }
 
-	new = (nx_pool_t *)m;
+    _new = (nx_pool_t *)m;
 
-	new->d.end = m + psize;
-	new->d.next = NULL;
-	new->d.failed = 0;
+    _new->d.end = m + psize;
+    _new->d.next = NULL;
+    _new->d.failed = 0;
 
-	m += sizeof(nx_pool_data_t);
-	m = nx_align_ptr(m, NX_ALIGNMENT);
-	new->d.last = m + size;
+    m += sizeof(nx_pool_data_t);
+    m = nx_align_ptr(m, NX_ALIGNMENT);
+    _new->d.last = m + size;
 
-	for (p = pool->current; p->d.next; p = p->d.next) {
-		if (p->d.failed++ > 4) {
-			pool->current = p->d.next;
-		}
-	}
+    for (p = pool->current; p->d.next; p = p->d.next) {
+        if (p->d.failed++ > 4) {
+            pool->current = p->d.next;
+        }
+    }
 
-	p->d.next = new;
+    p->d.next = _new;
 
-	return m;
+    return m;
 }
 
 
 static void *
 nx_palloc_large(nx_pool_t *pool, size_t size)
 {
-	void              *p;
-	u_int         n;
-	nx_pool_large_t  *large;
+    void             *p;
+    u_int             n;
+    nx_pool_large_t  *large;
 
-	p = nx_alloc(size);
-	if (p == NULL) {
-		return NULL;
-	}
+    p = nx_alloc(size);
+    if (p == NULL) {
+        return NULL;
+    }
 
-	n = 0;
+    n = 0;
 
-	for (large = pool->large; large; large = large->next) {
-		if (large->alloc == NULL) {
-			large->alloc = p;
-			return p;
-		}
+    for (large = pool->large; large; large = large->next) {
+        if (large->alloc == NULL) {
+            large->alloc = p;
+            return p;
+        }
 
-		if (n++ > 3) {
-			break;
-		}
-	}
+        if (n++ > 3) {
+            break;
+        }
+    }
 
-	large = nx_palloc_small(pool, sizeof(nx_pool_large_t), 1);
-	if (large == NULL) {
-		nx_free(p);
-		return NULL;
-	}
+    large = nx_palloc_small(pool, sizeof(nx_pool_large_t), 1);
+    if (large == NULL) {
+        nx_free(p);
+        return NULL;
+    }
 
-	large->alloc = p;
-	large->next = pool->large;
-	pool->large = large;
+    large->alloc = p;
+    large->next = pool->large;
+    pool->large = large;
 
-	return p;
+    return p;
 }
 
 
 void *
 nx_pmemalign(nx_pool_t *pool, size_t size, size_t alignment)
 {
-	void              *p;
-	nx_pool_large_t  *large;
+    void             *p;
+    nx_pool_large_t  *large;
 
-	p = nx_memalign(alignment, size);
-	if (p == NULL) {
-		return NULL;
-	}
+    p = nx_memalign(alignment, size);
+    if (p == NULL) {
+        return NULL;
+    }
 
-	large = nx_palloc_small(pool, sizeof(nx_pool_large_t), 1);
-	if (large == NULL) {
-		nx_free(p);
-		return NULL;
-	}
+    large = nx_palloc_small(pool, sizeof(nx_pool_large_t), 1);
+    if (large == NULL) {
+        nx_free(p);
+        return NULL;
+    }
 
-	large->alloc = p;
-	large->next = pool->large;
-	pool->large = large;
+    large->alloc = p;
+    large->next = pool->large;
+    pool->large = large;
 
-	return p;
+    return p;
 }
 
 
 int
 nx_pfree(nx_pool_t *pool, void *p)
 {
-	nx_pool_large_t  *l;
+    nx_pool_large_t  *l;
 
-	for (l = pool->large; l; l = l->next) {
-		if (p == l->alloc) {
-			nx_free(l->alloc);
-			l->alloc = NULL;
+    for (l = pool->large; l; l = l->next) {
+        if (p == l->alloc) {
+            nx_free(l->alloc);
+            l->alloc = NULL;
 
-			return NX_OK;
-		}
-	}
+            return NX_OK;
+        }
+    }
 
-	return NX_DECLINED;
+    return NX_DECLINED;
 }
 
 
 void *
 nx_pcalloc(nx_pool_t *pool, size_t size)
 {
-	void *p;
+    void  *p;
 
-	p = nx_palloc(pool, size);
-	if (p) {
-		nx_memzero(p, size);
-	}
+    p = nx_palloc(pool, size);
+    if (p) {
+        nx_memzero(p, size);
+    }
 
-	return p;
+    return p;
 }
 
 
 nx_pool_cleanup_t *
 nx_pool_cleanup_add(nx_pool_t *p, size_t size)
 {
-	nx_pool_cleanup_t  *c;
+    nx_pool_cleanup_t  *c;
 
-	c = nx_palloc(p, sizeof(nx_pool_cleanup_t));
-	if (c == NULL) {
-		return NULL;
-	}
+    c = nx_palloc(p, sizeof(nx_pool_cleanup_t));
+    if (c == NULL) {
+        return NULL;
+    }
 
-	if (size) {
-		c->data = nx_palloc(p, size);
-		if (c->data == NULL) {
-			return NULL;
-		}
+    if (size) {
+        c->data = nx_palloc(p, size);
+        if (c->data == NULL) {
+            return NULL;
+        }
 
-	}
-	else {
-		c->data = NULL;
-	}
+    }
+    else {
+        c->data = NULL;
+    }
 
-	c->handler = NULL;
-	c->next = p->cleanup;
+    c->handler = NULL;
+    c->next = p->cleanup;
 
-	p->cleanup = c;
+    p->cleanup = c;
 
-	return c;
+    return c;
 }
 
 
 nx_buf_t *
 nx_create_temp_buf(nx_pool_t *pool, size_t size)
 {
-    nx_buf_t *b;
+    nx_buf_t  *b;
 
     b = nx_calloc_buf(pool);
     if (b == NULL) {

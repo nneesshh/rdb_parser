@@ -11,15 +11,27 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\build_body_aux_fields.c" />
-    <ClCompile Include="..\src\build_body_db_selector.c" />
-    <ClCompile Include="..\src\build_body_kv.c" />
-    <ClCompile Include="..\src\build_body_kv_load_value.c" />
+    <ClCompile Include="..\src\bip_buf.c" />
     <ClCompile Include="..\src\build_footer.c" />
+    <ClCompile Include="..\src\build_hash_or_zset_value.c" />
     <ClCompile Include="..\src\build_header.c" />
     <ClCompile Include="..\src\build_helper.c" />
+    <ClCompile Include="..\src\build_body.c" />
+    <ClCompile Include="..\src\build_intset_value.c" />
+    <ClCompile Include="..\src\build_list_or_set_value.c" />
+    <ClCompile Include="..\src\build_lzf_string_value.c" />
+    <ClCompile Include="..\src\build_node_detail_kv.c" />
+    <ClCompile Include="..\src\build_node_detail_kv_val.c" />
+    <ClCompile Include="..\src\build_string_value.c" />
+    <ClCompile Include="..\src\build_zl_hash_value.c" />
+    <ClCompile Include="..\src\build_zipmap_value.c" />
+    <ClCompile Include="..\src\build_zl_list_value.c" />
     <ClCompile Include="..\src\crc64.c" />
     <ClCompile Include="..\src\build_factory.c" />
+    <ClCompile Include="..\src\fast_memcpy.c" />
+    <ClCompile Include="..\src\mysnprintf.c" />
+    <ClCompile Include="..\src\nx_array.c" />
+    <ClCompile Include="..\src\node_builder.c" />
     <ClCompile Include="..\src\test.c" />
     <ClCompile Include="..\src\endian.c" />
     <ClCompile Include="..\src\intset.c" />
@@ -30,23 +42,34 @@
     <ClCompile Include="..\src\zipmap.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\build_body_aux_fields.h" />
-    <ClInclude Include="..\src\build_body_db_selector.h" />
-    <ClInclude Include="..\src\build_body_kv.h" />
-    <ClInclude Include="..\src\build_body_kv_load_value.h" />
+    <ClInclude Include="..\src\bip_buf.h" />
     <ClInclude Include="..\src\build_footer.h" />
+    <ClInclude Include="..\src\build_hash_or_zset_value.h" />
     <ClInclude Include="..\src\build_header.h" />
     <ClInclude Include="..\src\build_helper.h" />
+    <ClInclude Include="..\src\build_body.h" />
+    <ClInclude Include="..\src\build_intset_value.h" />
+    <ClInclude Include="..\src\build_list_or_set_value.h" />
+    <ClInclude Include="..\src\build_lzf_string_value.h" />
+    <ClInclude Include="..\src\build_node_detail_kv.h" />
+    <ClInclude Include="..\src\build_node_detail_kv_val.h" />
+    <ClInclude Include="..\src\build_string_value.h" />
+    <ClInclude Include="..\src\build_zl_hash_value.h" />
+    <ClInclude Include="..\src\build_zipmap_value.h" />
+    <ClInclude Include="..\src\build_zl_list_value.h" />
     <ClInclude Include="..\src\crc64.h" />
     <ClInclude Include="..\src\endian.h" />
+    <ClInclude Include="..\src\fast_memcpy.h" />
     <ClInclude Include="..\src\intset.h" />
     <ClInclude Include="..\src\lzf.h" />
     <ClInclude Include="..\src\lzfP.h" />
     <ClInclude Include="..\src\build_factory.h" />
-    <ClInclude Include="..\src\node_value_handlers.h" />
+    <ClInclude Include="..\src\mysnprintf.h" />
+    <ClInclude Include="..\src\nx_array.h" />
     <ClInclude Include="..\src\rdb_parser.h" />
     <ClInclude Include="..\src\nx_buf.h" />
     <ClInclude Include="..\src\rdb_parser_def.h" />
+    <ClInclude Include="..\src\node_builder.h" />
     <ClInclude Include="..\src\ziplist.h" />
     <ClInclude Include="..\src\zipmap.h" />
   </ItemGroup>
@@ -125,7 +148,7 @@
       <OutputFile>$(OutDir)$(ProjectName).lib</OutputFile>
     </Lib>
     <Link>
-      <AdditionalLibraryDirectories>../../bin/$(Configuration)/</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../bin/$(Configuration)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>lua51.lib</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>

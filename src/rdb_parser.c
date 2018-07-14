@@ -1,20 +1,12 @@
 #include "rdb_parser.h"
+#include <time.h>
+#include <assert.h>
 
-#include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <sys/stat.h>
+#ifdef _DEBUG
+#include <vld.h>
+#endif
 
-#include "lzf.h"
-#include "intset.h"
-#include "ziplist.h"
-#include "zipmap.h"
-#include "crc64.h"
-#include "endian.h"
-
+#include "node_builder.h"
 #include "build_factory.h"
 
 #define KEY_FIELD_STR      "key"
@@ -25,121 +17,40 @@
 #define VERSION_STR        "version"
 #define MAGIC_VERSION      5
 
-rdb_node_builder_chain_t *
-alloc_node_builder_chain_link(rdb_parser_t *rp, rdb_node_builder_chain_t **ll)
-{
-	rdb_node_builder_chain_t *cl, *ln;
-
-    if (rp->nbl_free) {
-        cl = rp->nbl_free;
-        rp->nbl_free = cl->next;
-    }
-    else {
-		cl = nx_palloc(rp->pool, sizeof(rdb_node_builder_chain_t));
-		if (cl == NULL) {
-			return NULL;
-		}
-    }
-
-    if ((*ll) == NULL) {
-        (*ll) = cl;
-    }
-    else {
-        for (ln = (*ll); ln->next; ln = ln->next) { /* void */ }
-
-        ln->next = cl;
-    }
-
-	cl->nb = nx_palloc(rp->pool, sizeof(rdb_node_builder_t));
-	nx_memzero(cl->nb, sizeof(rdb_node_builder_t));
-    cl->next = NULL;
-    return cl;
-}
-
-
-rdb_kv_chain_t *
-alloc_rdb_kv_chain_link(rdb_parser_t *rp, rdb_kv_chain_t **ll)
-{
-    rdb_kv_chain_t *cl, *ln;
-
-    cl = nx_palloc(rp->pool, sizeof(rdb_kv_chain_t));
-    if (cl == NULL) {
-        return NULL;
-    }
-
-    if ((*ll) == NULL) {
-        (*ll) = cl;
-    }
-    else {
-        for (ln = (*ll); ln->next; ln = ln->next) { /* void */ }
-
-        ln->next = cl;
-    }
-
-    cl->kv = nx_palloc(rp->pool, sizeof(rdb_kv_t));
-    nx_str_null(&cl->kv->key);
-    nx_str_null(&cl->kv->val);
-    cl->next = NULL;
-    return cl;
-}
-
-
-rdb_node_chain_t *
-alloc_rdb_node_chain_link(rdb_parser_t *rp, rdb_node_chain_t **ll)
-{
-    rdb_node_chain_t *cl, *ln;
-
-    cl = nx_palloc(rp->pool, sizeof(rdb_node_chain_t));
-    if (cl == NULL) {
-        return NULL;
-    }
-
-    if ((*ll) == NULL) {
-        (*ll) = cl;
-    }
-    else {
-        for (ln = (*ll); ln->next; ln = ln->next) { /* void */ }
-
-        ln->next = cl;
-    }
-
-    cl->node = nx_palloc(rp->pool, sizeof(rdb_node_t));
-    cl->node->expire = -1;
-    cl->node->type = 0;
-    nx_str_null(&cl->node->key);
-    nx_str_null(&cl->node->val);
-    cl->node->vall = NULL;
-    cl->node->size = 0;
-    cl->next = NULL;
-
-    return cl;
-}
-
+enum PARSE_RDB {
+    PARSE_RDB_IDLE = 0,
+    PARSE_RDB_HEADER,
+    PARSE_RDB_BODY,
+    PARSE_RDB_FOOTER,
+    PARSE_RDB_OVER,
+};
 
 rdb_parser_t *
 create_rdb_parser(size_t size)
 {
     rdb_parser_t *rp = nx_alloc(sizeof(rdb_parser_t));
+    nx_memzero(rp, sizeof(rdb_parser_t));
 
     /* NOTE: trick here, version set 5 as we want to calculate crc where read version field. */
     rp->version = MAGIC_VERSION;
     rp->chksum = 0;
     rp->parsed = 0;
+    rp->state = PARSE_RDB_IDLE;
 
+	assert(size >= 1024);
+	rp->pool_size = size;
     rp->pool = nx_create_pool(size);
-    rp->in_b = nx_create_temp_buf(rp->pool, size);
+
+	rp->in_b_size = 4096;
+    rp->in_b = nx_create_temp_buf(rp->pool, rp->in_b_size);
 
     rp->root = NULL;
+	rp->available_nodes = 0;
+    rp->cur_ln = NULL;
 
-	rp->nbl_free = NULL;
-	rp->nbl_busy = NULL;
-	rp->nbl_nbusy = 0;
-
-	rp->cur_nb = NULL;
-
-	return rp;
+    rp->stack_nb = nx_array_create(rp->pool, 16, sizeof(rdb_node_builder_t));
+    return rp;
 }
-
 
 void
 destroy_rdb_parser(rdb_parser_t *rp)
@@ -148,133 +59,339 @@ destroy_rdb_parser(rdb_parser_t *rp)
     nx_free(rp);
 }
 
-
-rdb_node_builder_t *
-create_node_builder(rdb_parser_t *rp, uint8_t type)
+void
+reset_rdb_parser(rdb_parser_t *rp)
 {
-	rdb_node_builder_t *nb;
-	rdb_node_builder_chain_t *cl;
+	nx_pool_t  *p, *tmp;
 
-	cl = alloc_node_builder_chain_link(rp, &rp->nbl_busy);
+	rp->chksum = 0;
+	rp->parsed = 0;
+	rp->state = PARSE_RDB_IDLE;
 
-	nb = cl->nb;
-	nb->type = type;
-	nb->cur_ln = NULL;
+	nx_reset_pool(rp->pool);
 
-	switch (type) {
-	case REDIS_NODE_TYPE_HEADER:
-		nb->phase = RDB_PHASE_HEADER;
-		nb->build = build_header;
-		break;
-
-	case REDIS_NODE_TYPE_DB_SELECTOR:
-		nb->phase = RDB_PHASE_BODY_DB_SELECTOR;
-		nb->build = build_body_db_selector;
-		break;
-
-	case REDIS_NODE_TYPE_AUX_FIELDS:
-		nb->phase = RDB_PHASE_BODY_AUX_FIELDS;
-		nb->build = build_body_aux_fields;
-		break;
-	
-	case REDIS_NODE_TYPE_EOF:
-		nb->phase = RDB_PHASE_FOOTER;
-		nb->build = build_footer;
-		break;
-
-	default: {
-		nb->phase = RDB_PHASE_BODY_KV;
-		
-		/* alloc node */
-		nb->cur_ln = alloc_rdb_node_chain_link(rp, &rp->root);
-		nb->build = build_body_kv;
-		break;
+	/* shrink pool*/
+	p = rp->pool->d.next;
+	while(p) {
+		tmp = p->d.next;
+		nx_free(p);
+		p = tmp;
 	}
+	rp->pool->d.next = NULL;
 
-	}
-		
-    return nb;
+	rp->in_b = nx_create_temp_buf(rp->pool, rp->in_b_size);
+
+	rp->root = NULL;
+	rp->available_nodes = 0;
+	rp->cur_ln = NULL;
+
+	rp->stack_nb = nx_array_create(rp->pool, 16, sizeof(rdb_node_builder_t));
 }
 
 int
-next_node_type(rdb_parser_t *rp, nx_buf_t *b, uint8_t *type)
-{
-	size_t n;
-
-	/* kv type */
-	if ((n = read_kv_type(rp, b, type)) == 0) {
-		return RDB_PHASE_BUILD_ERROR_PREMATURE;
-	}
-
-	/* ok */
-	calc_crc(rp, b, n);
-	return RDB_PHASE_BUILD_OK;
-}
-
-int
-rdb_parse_file(const char *path)
+rdb_parse_node_val_once(rdb_parser_t *rp, nx_buf_t *b)
 {
     int rc = 0;
+    rdb_node_builder_t *nb;
+    int depth = 0;
+
+    /* main node builder */
+    RDB_NODE_BUILDER_LOOP_BEGIN(rp, nb, depth)
+    {
+        rc = build_node_detail_kv_val(rp, nb, b);
+    }
+    RDB_NODE_BUILDER_LOOP_END(rp, rc)
+        return rc;
+}
+
+int
+rdb_parse_once(rdb_parser_t *rp, nx_buf_t *b)
+{
+    int rc;
+
+    rc = NODE_BUILD_AGAIN;
+
+    while (rc != NODE_BUILD_ERROR_PREMATURE
+        && rp->state != PARSE_RDB_OVER) {
+
+        switch (rp->state) {
+        case PARSE_RDB_IDLE:
+        case PARSE_RDB_HEADER:
+            /* header */
+            if ((rc = build_header(rp, b)) != NODE_BUILD_OVER) {
+                break;
+            }
+
+            rp->state = PARSE_RDB_BODY;
+            break;
+
+        case PARSE_RDB_BODY:
+            /* body  */
+            if ((rc = build_body(rp, b)) != NODE_BUILD_OVER) {
+                break;
+            }
+
+            rp->state = PARSE_RDB_FOOTER;
+            break;
+
+        case PARSE_RDB_FOOTER:
+            /* body  */
+            if ((rc = build_footer(rp, b)) != NODE_BUILD_OVER) {
+                break;
+            }
+
+            rp->state = PARSE_RDB_OVER;
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    return rc;
+}
+
+int
+rdb_parse_file(rdb_parser_t *rp, const char *path)
+{
+    int rc, is_eof;
 
     FILE *r_fp;
-    rdb_parser_t *rp;
-
-    int nbytes, is_eof;
-	uint8_t type;
-    size_t n;
-
+    size_t bytes, reserved;
     nx_buf_t *b;
-    nx_chain_t *cl;
-	rdb_node_builder_chain_t *in_cl;
 
-    r_fp =  fopen(path, "r");
-    rp = create_rdb_parser(1024);
-	is_eof = 0;
-	b = rp->in_b;
+    r_fp = fopen(path, "rb");
+    b = rp->in_b;
 
-	/* read file into buffer */
-	nbytes = fread(b->pos, 1, (b->end - b->last), r_fp);
-	if (nbytes <= 0) {
-		is_eof = 1;
-	}
-	else {
-		b->last += nbytes;
-	}
+    is_eof = 0;
 
-	/* build header node */
-	type = REDIS_NODE_TYPE_HEADER;
-	rp->cur_nb = create_node_builder(rp, type);
+    while (!is_eof
+        && PARSE_RDB_OVER != rp->state) {
 
-	while (1) {
-		/* read file into buffer */
-		nbytes = fread(b->pos, 1, (b->end - b->last), r_fp);
-		if (nbytes <= 0) {
-			is_eof = 1;
-		}
-		else {
-			b->last += nbytes;
-		}
+        /* init reserved buffer */
+        if (b->pos > b->start) {
+            if (b->pos == b->last) {
+                b->last = b->pos = b->start;
+            }
+            else {
+                memmove(b->start, b->pos, b->last - b->pos);
+                b->last -= (b->pos - b->start);
+                b->pos = b->start;
+            }
+        }
+        reserved = (b->end - b->last);
+        if (reserved <= 0) {
+            rc = NODE_BUILD_ERROR_PREMATURE;
+            break;
+        }
 
-		if (!rp->cur_nb->ready) {
-			rp->cur_nb->build(rp, b, type);
-		}
+        /* read file into reserved buffer */
+        bytes = fread(b->last, 1, reserved, r_fp);
+        if (0 == bytes || bytes < reserved) {
+            is_eof = 1;
 
-		while (rp->cur_nb->ready) {
+            if (0 == bytes) {
+                rc = NODE_BUILD_ERROR_PREMATURE;
+                break;
+            }
+        }
+        b->last += bytes;
 
-			/* next node type */
-			if ((rc = next_node_type(rp, b, &type)) != RDB_PHASE_BUILD_OK) {
-				break;
-			}
-
-			/* process node */
-			rp->cur_nb = create_node_builder(rp, type);
-			rc = rp->cur_nb->build(rp, b, type);
-		}
-	} 
-
-
-
+        /* consume */
+        rc = rdb_parse_once(rp, b);
+    }
 
     fclose(r_fp);
-    return 0;
+    return rc;
+}
+
+void
+rdb_dump(rdb_parser_t *rp, const char *dump_to_path)
+{
+    FILE *fp;
+
+    rdb_node_t *node;
+    rdb_node_chain_t *cl;
+    int i = 0;
+
+    rdb_kv_t *kv;
+    rdb_kv_chain_t *kvcl;
+    time_t tmstart, tmover;
+
+    fp = fopen(dump_to_path, "w");
+
+    fprintf(fp, "version:%d\n", rp->version);
+    fprintf(fp, "chksum:%lld\n", rp->chksum);
+    fprintf(fp, "bytes:%lld\n", rp->parsed);
+	fprintf(fp, "nodes:%lld\n", rp->available_nodes);
+
+    tmstart = time(NULL);
+    fprintf(fp, "\n==== dump start ====\n");
+
+    for (cl = rp->root; cl; cl = cl->next) {
+        node = cl->node;
+        ++i;
+
+        switch (node->type) {
+        case REDIS_NODE_TYPE_AUX_FIELDS:
+            fprintf(fp, "(%d)[AUX_FIELDS] %s\n\n",
+                i, node->aux_fields.data);
+            break;
+
+        case REDIS_NODE_TYPE_EXPIRE_SEC:
+        case REDIS_NODE_TYPE_EXPIRE_MS:
+            fprintf(fp, "(%d)[EXPIRE] %d\n\n",
+                i, node->expire);
+            break;
+
+        case REDIS_NODE_TYPE_DB_SELECTOR:
+            fprintf(fp, "(%d)[DB_SELECTOR] %d\n\n",
+                i, node->db_selector);
+            break;
+
+        case REDIS_NODE_TYPE_STRING:
+            fprintf(fp, "(%d)[STRING] %s = %s\n\n",
+                i, node->key.data, node->val.data);
+            break;
+
+        case REDIS_NODE_TYPE_LIST:
+            fprintf(fp, "(%d)[LIST] %s = (%d)\n[\n",
+                i, node->key.data, node->size);
+
+            for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+                kv = kvcl->kv;
+                fprintf(fp, "\t%s,\n", kv->val.data);
+            }
+            fprintf(fp, "]\n\n");
+            break;
+
+        case REDIS_NODE_TYPE_SET:
+            fprintf(fp, "(%d)[SET] %s = (%d)\n[\n",
+                i, node->key.data, node->size);
+
+            for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+                kv = kvcl->kv;
+                fprintf(fp, "\t%s,\n", kv->val.data);
+            }
+            fprintf(fp, "]\n\n");
+            break;
+
+        case REDIS_NODE_TYPE_ZSET:
+            fprintf(fp, "(%d)[ZSET] %s = (%d)\n[\n",
+                i, node->key.data, node->size);
+
+            for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+                kv = kvcl->kv;
+                fprintf(fp, "\t%s = %s,\n", kv->key.data, kv->val.data);
+            }
+            fprintf(fp, "]\n\n");
+            break;
+
+        case REDIS_NODE_TYPE_HASH:
+            fprintf(fp, "(%d)[HASH] %s = (%d)\n[\n",
+                i, node->key.data, node->size);
+
+            for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+                kv = kvcl->kv;
+                fprintf(fp, "\t%s = %s,\n", kv->key.data, kv->val.data);
+            }
+            fprintf(fp, "]\n\n");
+            break;
+
+        case REDIS_NODE_TYPE_ZIPMAP:
+            fprintf(fp, "(%d)[ZIPMAP] %s = (%d)\n[\n",
+                i, node->key.data, node->size);
+
+            for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+                kv = kvcl->kv;
+
+                if (kv->key.len > 0) {
+                    fprintf(fp, "\t%s = %s,\n", kv->key.data, kv->val.data);
+                }
+                else {
+                    fprintf(fp, "\t%s,\n", kv->val.data);
+                }
+            }
+            fprintf(fp, "]\n\n");
+            break;
+
+        case REDIS_NODE_TYPE_LIST_ZIPLIST:
+            fprintf(fp, "(%d)[ZIPLIST] %s = (%d)\n[\n",
+                i, node->key.data, node->size);
+
+            for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+                kv = kvcl->kv;
+
+                if (kv->key.len > 0) {
+                    fprintf(fp, "\t%s = %s,\n", kv->key.data, kv->val.data);
+                }
+                else {
+                    fprintf(fp, "\t%s,\n", kv->val.data);
+                }
+            }
+            fprintf(fp, "]\n\n");
+            break;
+
+        case REDIS_NODE_TYPE_INTSET:
+            fprintf(fp, "(%d)[INTSET] %s = (%d)\n[\n",
+                i, node->key.data, node->size);
+
+            for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+                kv = kvcl->kv;
+
+                if (kv->key.len > 0) {
+                    fprintf(fp, "\t%s = %s,\n", kv->key.data, kv->val.data);
+                }
+                else {
+                    fprintf(fp, "\t%s,\n", kv->val.data);
+                }
+            }
+            fprintf(fp, "]\n\n");
+            break;
+
+        case REDIS_NODE_TYPE_ZSET_ZIPLIST:
+            fprintf(fp, "(%d)[ZSET_ZL] %s = (%d)\n[\n",
+                i, node->key.data, node->size);
+
+            for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+                kv = kvcl->kv;
+
+                if (kv->key.len > 0) {
+                    fprintf(fp, "\t%s = %s,\n", kv->key.data, kv->val.data);
+                }
+                else {
+                    fprintf(fp, "\t%s,\n", kv->val.data);
+                }
+            }
+            fprintf(fp, "]\n\n");
+            break;
+
+        case REDIS_NODE_TYPE_HASH_ZIPLIST:
+            fprintf(fp, "(%d)[HASH_ZL] %s = (%d)\n[\n",
+                i, node->key.data, node->size);
+
+            for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+                kv = kvcl->kv;
+
+                if (kv->key.len > 0) {
+                    fprintf(fp, "\t%s = %s,\n", kv->key.data, kv->val.data);
+                }
+                else {
+                    fprintf(fp, "\t%s,\n", kv->val.data);
+                }
+            }
+            fprintf(fp, "]\n\n");
+            break;
+
+        case REDIS_NODE_TYPE_EOF:
+        default:
+            break;
+        }
+    }
+    fprintf(fp, "==== dump over ====\n");
+
+    tmover = time(NULL);
+    fprintf(fp, "cost: %lld seconds", tmover - tmstart);
+
+    fclose(fp);
 }

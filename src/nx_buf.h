@@ -1,6 +1,9 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdio.h>
+#include <memory.h>
+#include <malloc.h>
 
 
 #ifdef _MSC_VER /* msvc */
@@ -37,14 +40,14 @@ typedef unsigned long   u_long;
 
 
 typedef struct {
-	size_t      len;
-	u_char     *data;
+    size_t      len;
+    u_char     *data;
 } nx_str_t;
 
 
 typedef struct {
-	nx_str_t   key;
-	nx_str_t   value;
+    nx_str_t   key;
+    nx_str_t   value;
 } nx_keyval_t;
 
 
@@ -69,16 +72,16 @@ typedef struct {
 INLINE u_char *
 nx_strlchr(u_char *p, u_char *last, u_char c)
 {
-	while (p < last) {
+    while (p < last) {
 
-		if (*p == c) {
-			return p;
-		}
+        if (*p == c) {
+            return p;
+        }
 
-		p++;
-	}
+        p++;
+    }
 
-	return NULL;
+    return NULL;
 }
 
 
@@ -158,17 +161,17 @@ typedef void(*nx_pool_cleanup_pt)(void *data);
 typedef struct nx_pool_cleanup_s  nx_pool_cleanup_t;
 
 struct nx_pool_cleanup_s {
-	nx_pool_cleanup_pt  handler;
-	void               *data;
-	nx_pool_cleanup_t  *next;
+    nx_pool_cleanup_pt  handler;
+    void               *data;
+    nx_pool_cleanup_t  *next;
 };
 
 
 typedef struct nx_pool_large_s  nx_pool_large_t;
 
 struct nx_pool_large_s {
-	nx_pool_large_t    *next;
-	void               *alloc;
+    nx_pool_large_t    *next;
+    void               *alloc;
 };
 
 
@@ -176,19 +179,19 @@ typedef struct nx_pool_s   nx_pool_t;
 typedef struct nx_chain_s  nx_chain_t;
 
 typedef struct {
-	u_char             *last;
-	u_char             *end;
-	nx_pool_t          *next;
-	u_int               failed;
+    u_char             *last;
+    u_char             *end;
+    nx_pool_t          *next;
+    u_int               failed;
 } nx_pool_data_t;
 
 struct nx_pool_s {
-	nx_pool_data_t      d;
-	size_t              max;
-	nx_pool_t          *current;
-	nx_chain_t         *chain;
-	nx_pool_large_t    *large;
-	nx_pool_cleanup_t  *cleanup;
+    nx_pool_data_t      d;
+    size_t              max;
+    nx_pool_t          *current;
+    nx_chain_t         *chain;
+    nx_pool_large_t    *large;
+    nx_pool_cleanup_t  *cleanup;
 };
 
 struct nx_chain_s {
