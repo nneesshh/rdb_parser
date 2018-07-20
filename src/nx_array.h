@@ -19,7 +19,7 @@ void *       nx_array_push_n(nx_array_t *a, u_int n);
 void *       nx_array_pop(nx_array_t *a);
 void *       nx_array_pop_all(nx_array_t *a);
 void *       nx_array_top(nx_array_t *a);
-void *       nx_array_at(nx_array_t *a, uint8_t index);
+void *       nx_array_at(nx_array_t *a, int index);
 
 static INLINE int
 nx_array_init(nx_array_t *array, nx_pool_t *pool, u_int n, size_t size)

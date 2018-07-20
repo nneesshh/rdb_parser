@@ -105,8 +105,11 @@ nx_reset_pool(nx_pool_t *pool)
         }
     }
 
-    for (p = pool; p; p = p->d.next) {
-        p->d.last = (u_char *)p + sizeof(nx_pool_t);
+	pool->d.last = (u_char *)pool + sizeof(nx_pool_t);
+	pool->d.failed = 0;
+
+    for (p = pool->d.next; p; p = p->d.next) {
+        p->d.last = (u_char *)p + sizeof(nx_pool_data_t);
         p->d.failed = 0;
     }
 

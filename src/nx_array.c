@@ -174,7 +174,7 @@ nx_array_top(nx_array_t *a)
 
 
 void *
-nx_array_at(nx_array_t *a, uint8_t index)
+nx_array_at(nx_array_t *a, int index)
 {
     void *elt;
 
