@@ -43,23 +43,23 @@ alloc_rdb_kv_chain_link(nx_pool_t *pool, rdb_kv_chain_t **ll)
     return kvcl;
 }
 
-rdb_node_chain_t *
-alloc_rdb_node_chain_link(nx_pool_t *pool, rdb_node_chain_t **ll)
+rdb_object_chain_t *
+alloc_rdb_object_chain_link(nx_pool_t *pool, rdb_object_chain_t **ll)
 {
-    rdb_node_chain_t *cl, *ln;
+    rdb_object_chain_t *cl, *ln;
 
-    cl = nx_palloc(pool, sizeof(rdb_node_chain_t));
+    cl = nx_palloc(pool, sizeof(rdb_object_chain_t));
     if (cl == NULL) {
         return NULL;
     }
-    nx_memzero(cl, sizeof(rdb_node_chain_t));
+    nx_memzero(cl, sizeof(rdb_object_chain_t));
 
-    cl->elem = nx_palloc(pool, sizeof(rdb_node_t));
+    cl->elem = nx_palloc(pool, sizeof(rdb_object_t));
     if (cl->elem == NULL) {
         nx_pfree(pool, cl);
         return NULL;
     }
-    nx_memzero(cl->elem, sizeof(rdb_node_t));
+    nx_memzero(cl->elem, sizeof(rdb_object_t));
 
     cl->elem->expire = -1;
     cl->next = NULL;
@@ -77,7 +77,7 @@ alloc_rdb_node_chain_link(nx_pool_t *pool, rdb_node_chain_t **ll)
 }
 
 size_t
-rdb_node_calc_crc(rdb_parser_t *rp, bip_buf_t *bb, size_t bytes)
+rdb_object_calc_crc(rdb_parser_t *rp, bip_buf_t *bb, size_t bytes)
 {
     assert(bip_buf_get_committed_size(bb) >= bytes);
 
@@ -93,7 +93,7 @@ rdb_node_calc_crc(rdb_parser_t *rp, bip_buf_t *bb, size_t bytes)
 }
 
 size_t
-rdb_node_read_store_len(rdb_parser_t *rp, bip_buf_t *bb, uint8_t *is_encoded, uint32_t *out)
+rdb_object_read_store_len(rdb_parser_t *rp, bip_buf_t *bb, uint8_t *is_encoded, uint32_t *out)
 {
     size_t bytes = 1;
     uint8_t *p;
@@ -152,7 +152,7 @@ rdb_node_read_store_len(rdb_parser_t *rp, bip_buf_t *bb, uint8_t *is_encoded, ui
 }
 
 size_t
-rdb_node_read_int(rdb_parser_t *rp, bip_buf_t *bb, uint8_t enc, int32_t *out)
+rdb_object_read_int(rdb_parser_t *rp, bip_buf_t *bb, uint8_t enc, int32_t *out)
 {
     size_t bytes = 1;
     uint8_t *p;
@@ -163,10 +163,10 @@ rdb_node_read_int(rdb_parser_t *rp, bip_buf_t *bb, uint8_t enc, int32_t *out)
 
     p = bip_buf_get_contiguous_block(bb);
 
-    if (RDB_STR_ENC_INT8 == enc) {
+    if (RDB_ENC_INT8 == enc) {
         (*out) = (*p);
     }
-    else if (RDB_STR_ENC_INT16 == enc) {
+    else if (RDB_ENC_INT16 == enc) {
 
         bytes = 2;
 
@@ -186,4 +186,21 @@ rdb_node_read_int(rdb_parser_t *rp, bip_buf_t *bb, uint8_t enc, int32_t *out)
         (*out) = (int32_t)((*p) | ((*(p + 1)) << 8) | ((*(p + 2)) << 16) | ((*(p + 3)) << 24));
     }
     return bytes;
+}
+
+
+size_t
+rdb_object_read_type(rdb_parser_t *rp, bip_buf_t *bb, uint8_t *out)
+{
+	size_t bytes = 1;
+	uint8_t *ptr;
+
+	if (bip_buf_get_committed_size(bb) < bytes) {
+		return 0;
+	}
+
+	ptr = bip_buf_get_contiguous_block(bb);
+
+	(*out) = (*ptr);
+	return bytes;
 }

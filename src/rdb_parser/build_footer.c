@@ -9,20 +9,20 @@ build_footer(rdb_parser_t *rp, bip_buf_t *bb)
     size_t bytes;
     uint64_t checksum;
 
-    rdb_node_t *node;
+    rdb_object_t *o;
 
-    node = rp->tail->elem;
+    o = rp->o;
 
     if (rp->version > CHECKSUM_VERSION_MIN) {
         bytes = 8;
         if (bip_buf_get_committed_size(bb) < bytes) {
-            return NB_ERROR_PREMATURE;
+            return OB_ERROR_PREMATURE;
         }
 
         checksum = (*(uint64_t *)bb->pos);
-        node->checksum = checksum;
-        assert(rp->chksum == node->checksum);
+        o->checksum = checksum;
+        assert(rp->chksum == o->checksum);
     }
 #endif
-    return NB_OVER;
+    return OB_OVER;
 }

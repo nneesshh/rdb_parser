@@ -1,14 +1,17 @@
 #pragma once
 
+#include "../platform_types.h"
 #include "rdb_parser_def.h"
 
-rdb_parser_t *  create_rdb_parser(func_process_rdb_node cb, void *payload);
-void            destroy_rdb_parser(rdb_parser_t *rp);
-void            reset_rdb_parser(rdb_parser_t *rp);
+MY_REDIS_EXTERN rdb_parser_t *  create_rdb_parser();
+MY_REDIS_EXTERN void            destroy_rdb_parser(rdb_parser_t *rp);
+MY_REDIS_EXTERN void            reset_rdb_parser(rdb_parser_t *rp);
+MY_REDIS_EXTERN void            rdb_parse_bind_walk_cb(rdb_parser_t *rp, func_walk_rdb_object cb, void *payload);
 
-int             rdb_node_parse_once(rdb_parser_t *rp, bip_buf_t *bb);
-int             rdb_dumped_data_parse_once(rdb_parser_t *rp, bip_buf_t *bb);
+MY_REDIS_EXTERN int             rdb_parse_object_once(rdb_parser_t *rp, bip_buf_t *bb);
+MY_REDIS_EXTERN int             rdb_parse_dumped_data_once(rdb_parser_t *rp, bip_buf_t *bb);
+MY_REDIS_EXTERN int             rdb_parse_dumped_data(rdb_parser_t *rp, func_walk_rdb_object cb, void *payload, const char *s, size_t len);
 
-int             rdb_parse_file(rdb_parser_t *rp, const char *path);
+MY_REDIS_EXTERN int             rdb_parse_file(rdb_parser_t *rp, const char *path);
 
 /* EOF */

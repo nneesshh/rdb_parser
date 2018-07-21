@@ -175,16 +175,16 @@ load_ziplist_list_or_set (rdb_parser_t *rp, const char *zl, rdb_kv_chain_t **val
     while (!ZIP_IS_END(entry)) {
 
         if (__ziplist_entry_is_str(entry)) {
-            s64 = __ziplist_entry_str(rp->n_pool, entry, &slen);
+            s64 = __ziplist_entry_str(rp->o_pool, entry, &slen);
         } else {
             if(__ziplist_entry_int(entry, &v) > 0) {
-                s64 = nx_palloc(rp->n_pool, 30);
+                s64 = nx_palloc(rp->o_pool, 30);
                 o_snprintf(s64, 30, "%lld", v);
                 slen = nx_strlen(s64);
             }
         }
 
-        ln = alloc_rdb_kv_chain_link(rp->n_pool, ll);
+        ln = alloc_rdb_kv_chain_link(rp->o_pool, ll);
         nx_str_set2(&ln->kv->val, s64, slen);
         ll = &ln;
 
@@ -211,10 +211,10 @@ load_ziplist_hash_or_zset(rdb_parser_t *rp, const char *zl, rdb_kv_chain_t **val
 
         /* key */
         if (__ziplist_entry_is_str(entry)) {
-            key = __ziplist_entry_str(rp->n_pool, entry, &klen);
+            key = __ziplist_entry_str(rp->o_pool, entry, &klen);
         } else {
             if(__ziplist_entry_int(entry, &v) > 0) {
-                key = nx_palloc(rp->n_pool, 30);
+                key = nx_palloc(rp->o_pool, 30);
                 o_snprintf(key, 30, "%lld", v);
                 klen = nx_strlen(key);
             }
@@ -223,18 +223,18 @@ load_ziplist_hash_or_zset(rdb_parser_t *rp, const char *zl, rdb_kv_chain_t **val
 
         /* value */
         if (__ziplist_entry_is_str(entry)) {
-            val = __ziplist_entry_str(rp->n_pool, entry, &vlen);
+            val = __ziplist_entry_str(rp->o_pool, entry, &vlen);
         }
         else {
             if (__ziplist_entry_int(entry, &v) > 0) {
-                val = nx_palloc(rp->n_pool, 30);
+                val = nx_palloc(rp->o_pool, 30);
                 o_snprintf(val, 30, "%lld", v);
                 vlen = nx_strlen(val);
             }
         }
         entry += __ziplist_entry_size(entry);
 
-        ln = alloc_rdb_kv_chain_link(rp->n_pool, ll);
+        ln = alloc_rdb_kv_chain_link(rp->o_pool, ll);
         nx_str_set2(&ln->kv->key, key, klen);
         nx_str_set2(&ln->kv->val, val, vlen);
         ll = &ln;
@@ -258,7 +258,7 @@ ziplist_dump(rdb_parser_t *rp, const char *s)
     entry = (char *)ZL_ENTRY(s);
     while (!ZIP_IS_END(entry)) {
         if (__ziplist_entry_is_str(entry)) {
-            tmp = __ziplist_entry_str(rp->n_pool, entry, &tmplen);
+            tmp = __ziplist_entry_str(rp->o_pool, entry, &tmplen);
             if (tmp) {
                 printf("str value: %s -- %d\n", tmp, tmplen); 
             }

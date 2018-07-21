@@ -66,19 +66,19 @@ load_zipmap(rdb_parser_t *rp, const char *zm, rdb_kv_chain_t **vall, size_t *siz
 
         /* key */
         klen = __zipmap_entry_strlen(zm);
-        key = nx_palloc(rp->n_pool, klen + 1);
+        key = nx_palloc(rp->o_pool, klen + 1);
         nx_memcpy(key, zm + __zipmap_entry_len_size(zm), klen);
         key[klen] = '\0';
         zm += __zipmap_entry_len(zm);
 
         /* value */
         vlen = __zipmap_entry_strlen(zm);
-        val = nx_palloc(rp->n_pool, vlen + 1);
+        val = nx_palloc(rp->o_pool, vlen + 1);
         nx_memcpy(val, zm + __zipmap_entry_len_size(zm) + 1, vlen);
         val[vlen] = '\0';
         zm += __zipmap_entry_len(zm) + 1;
 
-        ln = alloc_rdb_kv_chain_link(rp->n_pool, ll);
+        ln = alloc_rdb_kv_chain_link(rp->o_pool, ll);
         nx_str_set2(&ln->kv->key, key, klen);
         nx_str_set2(&ln->kv->val, val, vlen);
         ll = &ln;
@@ -100,14 +100,14 @@ zipmap_dump(rdb_parser_t *rp, const char *s)
     while (!ZM_IS_END(s)) {
         // key
         klen = __zipmap_entry_strlen(s);
-        key = nx_palloc(rp->n_pool, klen + 1);
+        key = nx_palloc(rp->o_pool, klen + 1);
         nx_memcpy(key, s + __zipmap_entry_len_size(s), klen);
         key[klen] = '\0';
         s += __zipmap_entry_len(s);
 
         // value
         vlen = __zipmap_entry_strlen(s);
-        val = nx_palloc(rp->n_pool, vlen + 1);
+        val = nx_palloc(rp->o_pool, vlen + 1);
         val[vlen] = '\0';
         nx_memcpy(val, s + __zipmap_entry_len_size(s) + 1, vlen);
         s += __zipmap_entry_len(s) + 1;

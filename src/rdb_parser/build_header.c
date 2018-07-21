@@ -16,18 +16,18 @@ build_header(rdb_parser_t *rp, bip_buf_t *bb)
     bytes = 9;
 
     if (bip_buf_get_committed_size(bb) < bytes) {
-        return NB_ERROR_PREMATURE;
+        return OB_ERROR_PREMATURE;
     }
 
 	ptr = bip_buf_get_contiguous_block(bb);
     if (memcmp(ptr, MAGIC_STR, 5) != 0)
-        return NB_ERROR_INVALID_MAGIC_STRING;
+        return OB_ERROR_INVALID_MAGIC_STRING;
 
     nx_memcpy(chversion, ptr + 5, 4);
     chversion[4] = '\0';
     rp->version = atoi(chversion);
 
     /* ok */
-    rdb_node_calc_crc(rp, bb, bytes);
-    return NB_OVER;
+    rdb_object_calc_crc(rp, bb, bytes);
+    return OB_OVER;
 }

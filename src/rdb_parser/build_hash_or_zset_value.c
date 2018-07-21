@@ -7,128 +7,127 @@ enum BUILD_HASH_OR_ZSET_TAG {
     BUILD_HASH_OR_ZSET_LOOP_VAL,
 };
 
-static int __build_hash_or_zset_store_len(rdb_parser_t *rp, rdb_node_builder_t *nb, bip_buf_t *bb);
-static int __build_hash_or_zset_loop_key(rdb_parser_t *rp, rdb_node_builder_t *nb, bip_buf_t *bb);
-static int __build_hash_or_zset_loop_val(rdb_parser_t *rp, rdb_node_builder_t *nb, bip_buf_t *bb, rdb_kv_chain_t **vall, size_t *size);
+static int __build_hash_or_zset_store_len(rdb_parser_t *rp, rdb_object_builder_t *ob, bip_buf_t *bb);
+static int __build_hash_or_zset_loop_key(rdb_parser_t *rp, rdb_object_builder_t *ob, bip_buf_t *bb);
+static int __build_hash_or_zset_loop_val(rdb_parser_t *rp, rdb_object_builder_t *ob, bip_buf_t *bb, rdb_kv_chain_t **vall, size_t *size);
 
 static int
-__build_hash_or_zset_store_len(rdb_parser_t *rp, rdb_node_builder_t *nb, bip_buf_t *bb)
+__build_hash_or_zset_store_len(rdb_parser_t *rp, rdb_object_builder_t *ob, bip_buf_t *bb)
 {
     size_t n;
     uint32_t len;
 
-    if ((n = rdb_node_read_store_len(rp, bb, NULL, &len)) == 0)
-        return NB_ERROR_PREMATURE;
+    if ((n = rdb_object_read_store_len(rp, bb, NULL, &len)) == 0)
+        return OB_ERROR_PREMATURE;
 
-    nb->store_len = len;
-    nb->len = 0;
+    ob->store_len = len;
+    ob->len = 0;
 
     /* ok */
-    rdb_node_calc_crc(rp, bb, n);
+    rdb_object_calc_crc(rp, bb, n);
 
     /* next state */
-    nb->state = BUILD_HASH_OR_ZSET_LOOP_KEY;
-    return NB_AGAIN;
+    ob->state = BUILD_HASH_OR_ZSET_LOOP_KEY;
+    return OB_AGAIN;
 }
 
 static int
-__build_hash_or_zset_loop_key(rdb_parser_t *rp, rdb_node_builder_t *nb, bip_buf_t *bb)
+__build_hash_or_zset_loop_key(rdb_parser_t *rp, rdb_object_builder_t *ob, bip_buf_t *bb)
 {
     int rc = 0;
 
-    if (nb->len < nb->store_len) {
-        rc = build_string_value(rp, nb, bb, &nb->tmp_key);
+    if (ob->len < ob->store_len) {
+        rc = build_string_value(rp, ob, bb, &ob->tmp_key);
 
-        if (rc == NB_OVER) {
+        if (rc == OB_OVER) {
             /* next state */
-            nb->state = BUILD_HASH_OR_ZSET_LOOP_VAL;
-            return NB_AGAIN;
+            ob->state = BUILD_HASH_OR_ZSET_LOOP_VAL;
+            return OB_AGAIN;
         }
         return rc;
     }
     else {
         /* next state */
-        nb->state = BUILD_HASH_OR_ZSET_LOOP_VAL;
-        return NB_AGAIN;
+        ob->state = BUILD_HASH_OR_ZSET_LOOP_VAL;
+        return OB_AGAIN;
     }
 }
 
 static int
-__build_hash_or_zset_loop_val(rdb_parser_t *rp, rdb_node_builder_t *nb, bip_buf_t *bb, rdb_kv_chain_t **vall, size_t *size)
+__build_hash_or_zset_loop_val(rdb_parser_t *rp, rdb_object_builder_t *ob, bip_buf_t *bb, rdb_kv_chain_t **vall, size_t *size)
 {
     int rc = 0;
 
-    rdb_node_t *node;
-
+    rdb_object_t *o;
     rdb_kv_chain_t **ll;
 
-	node = rp->n;
+	o = rp->o;
 
-    if (nb->len < nb->store_len) {
-        rc = build_string_value(rp, nb, bb, &nb->tmp_val);
+    if (ob->len < ob->store_len) {
+        rc = build_string_value(rp, ob, bb, &ob->tmp_val);
 
         /* over */
-        if (rc == NB_OVER) {
+        if (rc == OB_OVER) {
 
-            ll = (NULL == node->vall_tail) ? vall : &node->vall_tail;
-            node->vall_tail = alloc_rdb_kv_chain_link(rp->n_pool, ll);
+            ll = (NULL == o->vall_tail) ? vall : &o->vall_tail;
+            o->vall_tail = alloc_rdb_kv_chain_link(rp->o_pool, ll);
 
-            nx_str_set2(&node->vall_tail->kv->key, nb->tmp_key.data, nb->tmp_key.len);
-            nx_str_set2(&node->vall_tail->kv->val, nb->tmp_val.data, nb->tmp_val.len);
+            nx_str_set2(&o->vall_tail->kv->key, ob->tmp_key.data, ob->tmp_key.len);
+            nx_str_set2(&o->vall_tail->kv->val, ob->tmp_val.data, ob->tmp_val.len);
 
-            nx_str_null(&nb->tmp_key);
-            nx_str_null(&nb->tmp_val);
+            nx_str_null(&ob->tmp_key);
+            nx_str_null(&ob->tmp_val);
 
-            ++nb->len;
+            ++ob->len;
 
-            if (nb->len < nb->store_len) {
+            if (ob->len < ob->store_len) {
                 /* next state */
-                nb->state = BUILD_HASH_OR_ZSET_LOOP_KEY;
-                return NB_AGAIN;
+                ob->state = BUILD_HASH_OR_ZSET_LOOP_KEY;
+                return OB_AGAIN;
             }
 
-            (*size) = nb->len;
+            (*size) = ob->len;
         }
         return rc;
     }
     else {
         /* next state */
-        nb->state = BUILD_HASH_OR_ZSET_LOOP_VAL;
-        return NB_AGAIN;
+        ob->state = BUILD_HASH_OR_ZSET_LOOP_VAL;
+        return OB_AGAIN;
     }
 }
 
 int
-build_hash_or_zset_value(rdb_parser_t *rp, rdb_node_builder_t *nb1, bip_buf_t *bb, rdb_kv_chain_t **vall, size_t *size)
+build_hash_or_zset_value(rdb_parser_t *rp, rdb_object_builder_t *ob, bip_buf_t *bb, rdb_kv_chain_t **vall, size_t *size)
 {
     int rc = 0;
-    rdb_node_builder_t *sub_nb;
-    int depth = nb1->depth + 1;
+    rdb_object_builder_t *sub_ob;
+    int depth = ob->depth + 1;
 
     /* sub builder */
-    NB_LOOP_BEGIN(rp, sub_nb, depth)
+    OB_LOOP_BEGIN(rp, sub_ob, depth)
     {
         /* sub process */
-        switch (sub_nb->state) {
+        switch (sub_ob->state) {
         case BUILD_HASH_OR_ZSET_IDLE:
         case BUILD_HASH_OR_ZSET_STORE_LEN:
-            rc = __build_hash_or_zset_store_len(rp, sub_nb, bb);
+            rc = __build_hash_or_zset_store_len(rp, sub_ob, bb);
             break;
 
         case BUILD_HASH_OR_ZSET_LOOP_KEY:
-            rc = __build_hash_or_zset_loop_key(rp, sub_nb, bb);
+            rc = __build_hash_or_zset_loop_key(rp, sub_ob, bb);
             break;
 
         case BUILD_HASH_OR_ZSET_LOOP_VAL:
-            rc = __build_hash_or_zset_loop_val(rp, sub_nb, bb, vall, size);
+            rc = __build_hash_or_zset_loop_val(rp, sub_ob, bb, vall, size);
             break;
 
         default:
-            rc = NB_ERROR_INVALID_NB_STATE;
+            rc = OB_ERROR_INVALID_NB_STATE;
             break;
         }
 
     }
-    NB_LOOP_END(rp, rc)
+    OB_LOOP_END(rp, rc)
     return rc;
 }

@@ -11,7 +11,7 @@ struct file_builder {
 };
 
 static int
-__dump_node(rdb_node_t *node, struct file_builder *fb)
+__dump_object(rdb_object_t *o, struct file_builder *fb)
 {
 	rdb_kv_t *kv;
 	rdb_kv_chain_t *kvcl;
@@ -20,77 +20,77 @@ __dump_node(rdb_node_t *node, struct file_builder *fb)
 	
 	++fb->total;
 
-	switch (node->type) {
-	case REDIS_AUX_FIELDS:
-		fprintf(fp, "(%d)[AUX_FIELDS] %s\n\n",
-			fb->total, node->aux_fields.data);
+	switch (o->type) {
+	case RDB_OPCODE_AUX:
+		fprintf(fp, "(%d)[AUX] key(%s)val(%s)\n\n",
+			fb->total, o->aux_key.data, o->aux_val.data);
 		break;
 
-	case REDIS_EXPIRETIME:
-	case REDIS_EXPIRETIME_MS:
+	case RDB_OPCODE_EXPIRETIME:
+	case RDB_OPCODE_EXPIRETIME_MS:
 		fprintf(fp, "(%d)[EXPIRE] %d\n\n",
-			fb->total, node->expire);
+			fb->total, o->expire);
 		break;
 
-	case REDIS_SELECTDB:
+	case RDB_OPCODE_SELECTDB:
 		fprintf(fp, "(%d)[DB_SELECTOR] %d\n\n",
-			fb->total, node->db_selector);
+			fb->total, o->db_selector);
 		break;
 
-	case REDIS_STRING:
+	case RDB_TYPE_STRING:
 		fprintf(fp, "(%d)[STRING] %s = %s\n\n",
-			fb->total, node->key.data, node->val.data);
+			fb->total, o->key.data, o->val.data);
 		break;
 
-	case REDIS_LIST:
+	case RDB_TYPE_LIST:
 		fprintf(fp, "(%d)[LIST] %s = (%d)\n[\n",
-			fb->total, node->key.data, node->size);
+			fb->total, o->key.data, o->size);
 
-		for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+		for (kvcl = o->vall; kvcl; kvcl = kvcl->next) {
 			kv = kvcl->kv;
 			fprintf(fp, "\t%s,\n", kv->val.data);
 		}
 		fprintf(fp, "]\n\n");
 		break;
 
-	case REDIS_SET:
+	case RDB_TYPE_SET:
 		fprintf(fp, "(%d)[SET] %s = (%d)\n[\n",
-			fb->total, node->key.data, node->size);
+			fb->total, o->key.data, o->size);
 
-		for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+		for (kvcl = o->vall; kvcl; kvcl = kvcl->next) {
 			kv = kvcl->kv;
 			fprintf(fp, "\t%s,\n", kv->val.data);
 		}
 		fprintf(fp, "]\n\n");
 		break;
 
-	case REDIS_ZSET:
+	case RDB_TYPE_ZSET:
 		fprintf(fp, "(%d)[ZSET] %s = (%d)\n[\n",
-			fb->total, node->key.data, node->size);
+			fb->total, o->key.data, o->size);
 
-		for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+		for (kvcl = o->vall; kvcl; kvcl = kvcl->next) {
 			kv = kvcl->kv;
 			fprintf(fp, "\t%s = %s,\n", kv->key.data, kv->val.data);
 		}
 		fprintf(fp, "]\n\n");
 		break;
 
-	case REDIS_HASH:
+	case RDB_TYPE_HASH:
 		fprintf(fp, "(%d)[HASH] %s = (%d)\n[\n",
-			fb->total, node->key.data, node->size);
+			fb->total, o->key.data, o->size);
 
-		for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+		for (kvcl = o->vall; kvcl; kvcl = kvcl->next) {
 			kv = kvcl->kv;
 			fprintf(fp, "\t%s = %s,\n", kv->key.data, kv->val.data);
 		}
 		fprintf(fp, "]\n\n");
 		break;
 
-	case REDIS_HASH_ZIPMAP:
+	case RDB_TYPE_HASH_ZIPMAP:
 		fprintf(fp, "(%d)[ZIPMAP] %s = (%d)\n[\n",
-			fb->total, node->key.data, node->size);
+			fb->total, o->key.data, o->size);
 
-		for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+		for (kvcl = o->vall; kvcl; kvcl = kvcl->next) {
 			kv = kvcl->kv;
 
 			if (kv->key.len > 0) {
@@ -103,11 +103,11 @@ __dump_node(rdb_node_t *node, struct file_builder *fb)
 		fprintf(fp, "]\n\n");
 		break;
 
-	case REDIS_LIST_ZIPLIST:
+	case RDB_TYPE_LIST_ZIPLIST:
 		fprintf(fp, "(%d)[ZIPLIST] %s = (%d)\n[\n",
-			fb->total, node->key.data, node->size);
+			fb->total, o->key.data, o->size);
 
-		for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+		for (kvcl = o->vall; kvcl; kvcl = kvcl->next) {
 			kv = kvcl->kv;
 
 			if (kv->key.len > 0) {
@@ -120,11 +120,11 @@ __dump_node(rdb_node_t *node, struct file_builder *fb)
 		fprintf(fp, "]\n\n");
 		break;
 
-	case REDIS_SET_INTSET:
+	case RDB_TYPE_SET_INTSET:
 		fprintf(fp, "(%d)[INTSET] %s = (%d)\n[\n",
-			fb->total, node->key.data, node->size);
+			fb->total, o->key.data, o->size);
 
-		for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+		for (kvcl = o->vall; kvcl; kvcl = kvcl->next) {
 			kv = kvcl->kv;
 
 			if (kv->key.len > 0) {
@@ -137,11 +137,11 @@ __dump_node(rdb_node_t *node, struct file_builder *fb)
 		fprintf(fp, "]\n\n");
 		break;
 
-	case REDIS_ZSET_ZIPLIST:
+	case RDB_TYPE_ZSET_ZIPLIST:
 		fprintf(fp, "(%d)[ZSET_ZL] %s = (%d)\n[\n",
-			fb->total, node->key.data, node->size);
+			fb->total, o->key.data, o->size);
 
-		for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+		for (kvcl = o->vall; kvcl; kvcl = kvcl->next) {
 			kv = kvcl->kv;
 
 			if (kv->key.len > 0) {
@@ -154,11 +154,11 @@ __dump_node(rdb_node_t *node, struct file_builder *fb)
 		fprintf(fp, "]\n\n");
 		break;
 
-	case REDIS_HASH_ZIPLIST:
+	case RDB_TYPE_HASH_ZIPLIST:
 		fprintf(fp, "(%d)[HASH_ZL] %s = (%d)\n[\n",
-			fb->total, node->key.data, node->size);
+			fb->total, o->key.data, o->size);
 
-		for (kvcl = node->vall; kvcl; kvcl = kvcl->next) {
+		for (kvcl = o->vall; kvcl; kvcl = kvcl->next) {
 			kv = kvcl->kv;
 
 			if (kv->key.len > 0) {
@@ -171,7 +171,7 @@ __dump_node(rdb_node_t *node, struct file_builder *fb)
 		fprintf(fp, "]\n\n");
 		break;
 
-	case REDIS_EOF:
+	case RDB_OPCODE_EOF:
 	default:
 		break;
 	}
@@ -180,9 +180,9 @@ __dump_node(rdb_node_t *node, struct file_builder *fb)
 }
 
 static int
-on_build_node(rdb_node_t *n, void *payload) {
+on_build_object(rdb_object_t *o, void *payload) {
 	struct file_builder *fb = (struct file_builder *)payload;
-	__dump_node(n, fb);
+	__dump_object(o, fb);
 	return 0;
 }
 
@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
 	count = 10;
 	tmstart = time(NULL);
 
-	rp = create_rdb_parser(on_build_node, &fb);
+	rp = create_rdb_parser(on_build_object, &fb);
 
 	for (i = 0; i < count; ++i) {
 
@@ -217,7 +217,7 @@ int main(int argc, char* argv[]) {
 		fprintf(fb.fp, "==== dump over ====\n");
 		fprintf(fb.fp, "chksum:%lld\n", rp->chksum);
 		fprintf(fb.fp, "bytes:%lld\n", rp->parsed);
-		fprintf(fb.fp, "nodes:%d\n", fb.total);
+		fprintf(fb.fp, "objects:%d\n", fb.total);
 
 		tmover2 = time(NULL);
 		fprintf(fb.fp, "cost: %lld seconds", tmover2 - tmstart2);

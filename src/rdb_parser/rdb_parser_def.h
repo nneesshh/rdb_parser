@@ -1,32 +1,10 @@
 #pragma once
 
+#include "rdb.h"
+
 #include "../bip_buf.h"
 #include "../nx_buf.h"
 #include "../nx_array.h"
-
-/* REDIS NODE TYPE */
-#define REDIS_AUX_FIELDS     0xfa
-#define REDIS_EXPIRETIME_MS  0xfc
-#define REDIS_EXPIRETIME     0xfd
-#define REDIS_SELECTDB       0xfe
-#define REDIS_EOF            0xff
-
-#define REDIS_STRING         0
-#define REDIS_LIST           1
-#define REDIS_SET            2
-#define REDIS_ZSET           3
-#define REDIS_HASH           4
-
-#define REDIS_HASH_ZIPMAP    9
-#define REDIS_LIST_ZIPLIST   10 
-#define REDIS_SET_INTSET     11 
-#define REDIS_ZSET_ZIPLIST   12 
-#define REDIS_HASH_ZIPLIST   13
-
-#define RDB_STR_ENC_INT8   0
-#define RDB_STR_ENC_INT16  1
-#define RDB_STR_ENC_INT32  2
-#define RDB_STR_ENC_LZF    3
 
 /* kv */
 typedef struct rdb_kv_s        rdb_kv_t;
@@ -42,15 +20,16 @@ struct rdb_kv_chain_s {
     rdb_kv_chain_t             *next;
 };
 
-/* node */
-typedef struct rdb_node_s        rdb_node_t;
-typedef struct rdb_node_chain_s  rdb_node_chain_t;
+/* object */
+typedef struct rdb_object_s        rdb_object_t;
+typedef struct rdb_object_chain_s  rdb_object_chain_t;
 
-struct rdb_node_s {
+struct rdb_object_s {
     uint8_t                     type;
 
     uint32_t                    db_selector;
-    nx_str_t                    aux_fields;
+    nx_str_t                    aux_key;
+	nx_str_t                    aux_val;
     uint64_t                    checksum;
     int                         expire;
 
@@ -62,18 +41,18 @@ struct rdb_node_s {
 
 };
 
-struct rdb_node_chain_s {
-    rdb_node_t                 *elem;
-    rdb_node_chain_t           *next;
+struct rdb_object_chain_s {
+    rdb_object_t                 *elem;
+    rdb_object_chain_t           *next;
 };
 
 /* parser */
-typedef struct rdb_node_builder_s  rdb_node_builder_t;
-typedef struct rdb_parser_s        rdb_parser_t;
+typedef struct rdb_object_builder_s  rdb_object_builder_t;
+typedef struct rdb_parser_s          rdb_parser_t;
 
-typedef int(*func_process_rdb_node)(rdb_node_t *rn, void *payload);
+typedef int(*func_walk_rdb_object)(rdb_object_t *o, void *payload);
 
-struct rdb_node_builder_s {
+struct rdb_object_builder_s {
     uint8_t                     depth;
     uint8_t                     state;
 
@@ -96,17 +75,16 @@ struct rdb_parser_s {
     bip_buf_t                  *in_bb;
 	nx_pool_t                  *pool;
 
-	nx_array_t                 *stack_nb;
+	nx_array_t                 *stack_ob;
 
-	rdb_node_t                 *n;
+	rdb_object_t               *o;
 
-	nx_pool_t                  *n_pool;
-	func_process_rdb_node       n_cb;
-	void                       *n_payload;
+	nx_pool_t                  *o_pool;
+	func_walk_rdb_object     o_cb;
+	void                       *o_payload;
 };
 
-#define rdb_node_init(_n)	 nx_memzero(_n, sizeof(rdb_node_t))
-#define rdb_node_clear(_rp)  rdb_node_init(_rp->n);nx_reset_pool(_rp->n_pool)
-//#define rdb_node_clear(_rp)  rdb_node_init(_rp->n);nx_destroy_pool(_rp->n_pool);_rp->n_pool=nx_create_pool(4096)
+#define rdb_object_init(_o)	   nx_memzero(_o, sizeof(rdb_object_t))
+#define rdb_object_clear(_rp)  rdb_object_init(_rp->o);nx_reset_pool(_rp->o_pool)
 
 /* EOF */

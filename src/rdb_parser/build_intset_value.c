@@ -5,7 +5,7 @@
 #include "intset.h"
 
 int
-build_intset_value(rdb_parser_t *rp, rdb_node_builder_t *nb, bip_buf_t *bb, rdb_kv_chain_t **vall, size_t *size)
+build_intset_value(rdb_parser_t *rp, rdb_object_builder_t *ob, bip_buf_t *bb, rdb_kv_chain_t **vall, size_t *size)
 {
     int rc = 0;
     uint32_t i;
@@ -16,19 +16,19 @@ build_intset_value(rdb_parser_t *rp, rdb_node_builder_t *nb, bip_buf_t *bb, rdb_
     rdb_kv_chain_t *ln, **ll;
 
     /* val */
-    rc = build_string_value(rp, nb, bb, &nb->tmp_val);
+    rc = build_string_value(rp, ob, bb, &ob->tmp_val);
 
     /* over */
-    if (rc == NB_OVER) {
+    if (rc == OB_OVER) {
         ll = vall;
-        is = (intset_t*)nb->tmp_val.data;
+        is = (intset_t*)ob->tmp_val.data;
 
         for (i = 0; i < is->length; ++i) {
             intset_get(is, i, &v64);
 
-            ln = alloc_rdb_kv_chain_link(rp->n_pool, ll);
+            ln = alloc_rdb_kv_chain_link(rp->o_pool, ll);
 
-            s64 = nx_palloc(rp->n_pool, 30);
+            s64 = nx_palloc(rp->o_pool, 30);
             o_snprintf(s64, 30, "%lld", v64);
             nx_str_set2(&ln->kv->val, s64, nx_strlen(s64));
 
@@ -37,8 +37,8 @@ build_intset_value(rdb_parser_t *rp, rdb_node_builder_t *nb, bip_buf_t *bb, rdb_
 
         (*size) = is->length;
 
-        nx_pfree(rp->n_pool, nb->tmp_val.data);
-        nx_str_null(&nb->tmp_val);
+        nx_pfree(rp->o_pool, ob->tmp_val.data);
+        nx_str_null(&ob->tmp_val);
     }
     return rc;
 }

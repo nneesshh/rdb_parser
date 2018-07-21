@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../mysnprintf.h"
-#include "rdb_node_builder.h"
+#include "rdb_object_builder.h"
 
 #include "build_helper.h"
 
@@ -18,8 +18,10 @@
 #include "build_intset_value.h"
 #include "build_zl_hash_value.h"
 
-#include "build_node_detail_kv.h"
-#include "build_node_detail_kv_val.h"
-#include "build_node_by_dumped_data.h"
+#include "build_opcode_aux.h"
+#include "build_object_detail_kv.h"
+#include "build_object_detail_kv_val.h"
+
+#include "build_dumped_data.h"
 
 /* EOF */

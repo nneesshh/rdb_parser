@@ -3,10 +3,10 @@
 #include "../endian.h"
 #include "rdb_parser.h"
 
-enum BUILD_NODE_TAG {
-    BUILD_NODE_IDLE = 0,
-    BUILD_NODE_TYPE,
-    BUILD_NODE_DETAIL,
+enum BUILD_BODY_TAG {
+    BUILD_BODY_IDLE = 0,
+    BUILD_BODY_OBJECT_TYPE,
+    BUILD_BODY_OBJECT_DETAIL,
 };
 
 static size_t
@@ -15,7 +15,7 @@ __read_db_selector(rdb_parser_t *rp, bip_buf_t *bb, uint32_t *out)
     size_t n;
     uint32_t selector;
 
-    if ((n = rdb_node_read_store_len(rp, bb, NULL, &selector)) == 0)
+    if ((n = rdb_object_read_store_len(rp, bb, NULL, &selector)) == 0)
         return 0;
 
     (*out) = selector;
@@ -60,193 +60,177 @@ __read_expire_time(rdb_parser_t *rp, bip_buf_t *bb, int is_ms, int *out)
     return bytes;
 }
 
-static size_t
-__read_kv_type(rdb_parser_t *rp, bip_buf_t *bb, uint8_t *out)
-{
-    size_t bytes = 1;
-    uint8_t *ptr;
-
-    if (bip_buf_get_committed_size(bb) < bytes) {
-        return 0;
-    }
-
-    ptr = bip_buf_get_contiguous_block(bb);
-
-    (*out) = (*ptr);
-    return bytes;
-}
-
-static int __build_node_type(rdb_parser_t *rp, rdb_node_builder_t *nb, bip_buf_t *bb);
-static int __build_node_detail(rdb_parser_t *rp, rdb_node_builder_t *nb, bip_buf_t *bb);
+static int __build_object_type(rdb_parser_t *rp, rdb_object_builder_t *ob, bip_buf_t *bb);
+static int __build_object_detail_kv_val(rdb_parser_t *rp, rdb_object_builder_t *ob, bip_buf_t *bb);
 
 static int
-__build_node_type(rdb_parser_t *rp, rdb_node_builder_t *nb, bip_buf_t *bb)
+__build_object_type(rdb_parser_t *rp, rdb_object_builder_t *ob, bip_buf_t *bb)
 {
     size_t n;
     uint8_t type;
 
-    rdb_node_t *node;
+    rdb_object_t *o;
     
-    if ((n = __read_kv_type(rp, bb, &type)) == 0)
-        return NB_ERROR_PREMATURE;
+    if ((n = rdb_object_read_type(rp, bb, &type)) == 0)
+        return OB_ERROR_PREMATURE;
 
-    node = rp->n;
-    node->type = type;
+    o = rp->o;
+    o->type = type;
 
     /* ok */
-    rdb_node_calc_crc(rp, bb, n);
+    rdb_object_calc_crc(rp, bb, n);
 
     /* next state */
-    nb->state = BUILD_NODE_DETAIL;
-    return NB_AGAIN;
+    ob->state = BUILD_BODY_OBJECT_DETAIL;
+    return OB_AGAIN;
 }
 
 static int
-__build_node_detail(rdb_parser_t *rp, rdb_node_builder_t *nb, bip_buf_t *bb)
+__build_object_detail_kv_val(rdb_parser_t *rp, rdb_object_builder_t *ob, bip_buf_t *bb)
 {
     int rc = 0;
     size_t n;
     int is_ms;
 
-    rdb_node_t *node;
+    rdb_object_t *o;
 
-	node = rp->n;
+	o = rp->o;
     
-    switch (node->type) {
-    case REDIS_AUX_FIELDS:
+    switch (o->type) {
+    case RDB_OPCODE_AUX:
         /* aux fields */
-        rc = build_string_value(rp, nb, bb, &node->aux_fields);
+        rc = build_opcode_aux(rp, ob, bb);
 
-        if (rc == NB_OVER) {
+        if (rc == OB_OVER) {
             /* process reply */
-            if (0 == rp->n_cb(rp->n, rp->n_payload)) {
-                rdb_node_clear(rp);
+            if (0 == rp->o_cb(rp->o, rp->o_payload)) {
+                rdb_object_clear(rp);
 
                 /* next state */
-                nb->state = BUILD_NODE_TYPE;
-                return NB_AGAIN;
+                ob->state = BUILD_BODY_OBJECT_TYPE;
+                return OB_AGAIN;
             }
             else {
-                rc = NB_ABORT;
+                rc = OB_ABORT;
             }
         }
         return rc;
 
-    case REDIS_SELECTDB:
+    case RDB_OPCODE_SELECTDB:
         /* db selector */
-        if ((n = __read_db_selector(rp, bb,  &node->db_selector)) == 0) {
-            return NB_ERROR_PREMATURE;
+        if ((n = __read_db_selector(rp, bb,  &o->db_selector)) == 0) {
+            return OB_ERROR_PREMATURE;
         }
 
         /* ok */
-        rdb_node_calc_crc(rp, bb, n);
+        rdb_object_calc_crc(rp, bb, n);
         
         /* process reply */
-        if (0 == rp->n_cb(rp->n, rp->n_payload)) {
-            rdb_node_clear(rp);
+        if (0 == rp->o_cb(rp->o, rp->o_payload)) {
+            rdb_object_clear(rp);
 
             /* next state */
-            nb->state = BUILD_NODE_TYPE;
-            return NB_AGAIN;
+            ob->state = BUILD_BODY_OBJECT_TYPE;
+            return OB_AGAIN;
         }
         else {
-            rc = NB_ABORT;
+            rc = OB_ABORT;
         }
         return rc;
 
-    case REDIS_EXPIRETIME:
-    case REDIS_EXPIRETIME_MS:
+    case RDB_OPCODE_EXPIRETIME:
+    case RDB_OPCODE_EXPIRETIME_MS:
         /* expire time */
-        is_ms = (REDIS_EXPIRETIME_MS == node->type);;
-        if ((n = __read_expire_time(rp, bb, is_ms, &node->expire)) == 0) {
-            return NB_ERROR_PREMATURE;
+        is_ms = (RDB_OPCODE_EXPIRETIME_MS == o->type);;
+        if ((n = __read_expire_time(rp, bb, is_ms, &o->expire)) == 0) {
+            return OB_ERROR_PREMATURE;
         }
 
         /* ok */
-        rdb_node_calc_crc(rp, bb, n);
+        rdb_object_calc_crc(rp, bb, n);
 
 		/* process reply */
-		if (0 == rp->n_cb(rp->n, rp->n_payload)) {
-			rdb_node_clear(rp);
+		if (0 == rp->o_cb(rp->o, rp->o_payload)) {
+			rdb_object_clear(rp);
 
 			/* next state */
-			nb->state = BUILD_NODE_TYPE;
-			return NB_AGAIN;
+			ob->state = BUILD_BODY_OBJECT_TYPE;
+			return OB_AGAIN;
 		}
 		else {
-			rc = NB_ABORT;
+			rc = OB_ABORT;
 		}
 		return rc;
 
-    case REDIS_STRING:
-    case REDIS_LIST:
-    case REDIS_SET:
-    case REDIS_ZSET:
-    case REDIS_HASH:
-    case REDIS_HASH_ZIPMAP:
-    case REDIS_LIST_ZIPLIST:
-    case REDIS_SET_INTSET:
-    case REDIS_ZSET_ZIPLIST:
-    case REDIS_HASH_ZIPLIST: {
-        /* node detail kv */
-        rc = build_node_detail_kv(rp, nb, bb);
+    case RDB_TYPE_STRING:
+    case RDB_TYPE_LIST:
+    case RDB_TYPE_SET:
+    case RDB_TYPE_ZSET:
+    case RDB_TYPE_HASH:
+    case RDB_TYPE_HASH_ZIPMAP:
+    case RDB_TYPE_LIST_ZIPLIST:
+    case RDB_TYPE_SET_INTSET:
+    case RDB_TYPE_ZSET_ZIPLIST:
+    case RDB_TYPE_HASH_ZIPLIST: {
+        /* object detail kv */
+        rc = build_object_detail_kv(rp, ob, bb);
 
-        if (rc == NB_OVER) {
+        if (rc == OB_OVER) {
 			/* process reply */
-			if (0 == rp->n_cb(rp->n, rp->n_payload)) {
-				rdb_node_clear(rp);
+			if (0 == rp->o_cb(rp->o, rp->o_payload)) {
+				rdb_object_clear(rp);
 
 				/* next state */
-				nb->state = BUILD_NODE_TYPE;
-				return NB_AGAIN;
+				ob->state = BUILD_BODY_OBJECT_TYPE;
+				return OB_AGAIN;
 			}
 			else {
-				rc = NB_ABORT;
+				rc = OB_ABORT;
 			}
         }
         return rc;
     }
 
-    case REDIS_EOF: {
-        return NB_OVER;
+    case RDB_OPCODE_EOF: {
+        return OB_OVER;
     }
 
     default:
-        return NB_ERROR_INVALID_NB_TYPE;
+        return OB_ERROR_INVALID_NB_TYPE;
     }
 
     /* premature because val is not completed yet */
-    return NB_ERROR_PREMATURE;
+    return OB_ERROR_PREMATURE;
 }
 
 int
 build_body(rdb_parser_t *rp, bip_buf_t *bb)
 {
     int rc = 0;
-    rdb_node_builder_t *nb;
+    rdb_object_builder_t *ob;
     int depth = 0;
 
     /* main builder */
-    NB_LOOP_BEGIN(rp, nb, depth)
+    OB_LOOP_BEGIN(rp, ob, depth)
     {
         /* main process */
-        switch (nb->state) {
-        case BUILD_NODE_IDLE:
-        case BUILD_NODE_TYPE:
-            rc = __build_node_type(rp, nb, bb);
+        switch (ob->state) {
+        case BUILD_BODY_IDLE:
+        case BUILD_BODY_OBJECT_TYPE:
+            rc = __build_object_type(rp, ob, bb);
             break;
 
-        case BUILD_NODE_DETAIL:
-            rc = __build_node_detail(rp, nb, bb);
+        case BUILD_BODY_OBJECT_DETAIL:
+            rc = __build_object_detail_kv_val(rp, ob, bb);
             break;
 
         default:
-            rc = NB_ERROR_INVALID_NB_STATE;
+            rc = OB_ERROR_INVALID_NB_STATE;
             break;
         }
 
     }
-    NB_LOOP_END(rp, rc)
+    OB_LOOP_END(rp, rc)
     return rc;
 }
 
