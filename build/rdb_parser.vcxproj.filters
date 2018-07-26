@@ -6,184 +6,381 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\lzf_d.c">
+    <ClCompile Include="..\data\redis-unstable\src\ae_evport.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\ziplist.c">
+    <ClCompile Include="..\data\redis-unstable\src\ae_kqueue.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\zipmap.c">
+    <ClCompile Include="..\data\redis-unstable\src\ae_select.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\crc64.c">
+    <ClCompile Include="..\data\redis-unstable\src\anet.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\endian.c">
+    <ClCompile Include="..\data\redis-unstable\src\aof.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\intset.c">
+    <ClCompile Include="..\data\redis-unstable\src\bio.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\nx_buf.c">
+    <ClCompile Include="..\data\redis-unstable\src\bitops.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\test.c">
+    <ClCompile Include="..\data\redis-unstable\src\blocked.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\rdb_parser.c">
+    <ClCompile Include="..\data\redis-unstable\src\childinfo.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_header.c">
+    <ClCompile Include="..\data\redis-unstable\src\cluster.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_helper.c">
+    <ClCompile Include="..\data\redis-unstable\src\config.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_factory.c">
+    <ClCompile Include="..\data\redis-unstable\src\crc16.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_footer.c">
+    <ClCompile Include="..\data\redis-unstable\src\crc64.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\nx_array.c">
+    <ClCompile Include="..\data\redis-unstable\src\db.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_body.c">
+    <ClCompile Include="..\data\redis-unstable\src\debug.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\node_builder.c">
+    <ClCompile Include="..\data\redis-unstable\src\defrag.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_node_detail_kv.c">
+    <ClCompile Include="..\data\redis-unstable\src\dict.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_string_value.c">
+    <ClCompile Include="..\data\redis-unstable\src\endianconv.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_list_or_set_value.c">
+    <ClCompile Include="..\data\redis-unstable\src\evict.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_zipmap_value.c">
+    <ClCompile Include="..\data\redis-unstable\src\expire.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_hash_or_zset_value.c">
+    <ClCompile Include="..\data\redis-unstable\src\geo.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_intset_value.c">
+    <ClCompile Include="..\data\redis-unstable\src\geohash.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_zl_list_value.c">
+    <ClCompile Include="..\data\redis-unstable\src\geohash_helper.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_zl_hash_value.c">
+    <ClCompile Include="..\data\redis-unstable\src\hyperloglog.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_lzf_string_value.c">
+    <ClCompile Include="..\data\redis-unstable\src\intset.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\mysnprintf.c">
+    <ClCompile Include="..\data\redis-unstable\src\latency.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\fast_memcpy.c">
+    <ClCompile Include="..\data\redis-unstable\src\lazyfree.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\build_node_detail_kv_val.c">
+    <ClCompile Include="..\data\redis-unstable\src\listpack.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\bip_buf.c">
+    <ClCompile Include="..\data\redis-unstable\src\localtime.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\lzf_c.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\lzf_d.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\memtest.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\module.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\multi.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\networking.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\notify.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\object.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\pqsort.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\pubsub.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\quicklist.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\rand.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\rax.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\rdb.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\redis-benchmark.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\redis-check-aof.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\redis-check-rdb.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\redis-cli.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\release.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\replication.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\rio.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\scripting.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\sds.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\sentinel.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\server.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\setproctitle.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\sha1.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\siphash.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\slowlog.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\sort.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\sparkline.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\syncio.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\t_hash.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\t_list.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\t_set.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\t_stream.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\t_string.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\t_zset.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\util.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\ziplist.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\zipmap.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\zmalloc.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\adlist.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\ae.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\data\redis-unstable\src\ae_epoll.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\lzf.h">
+    <ClInclude Include="..\data\redis-unstable\src\anet.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\lzfP.h">
+    <ClInclude Include="..\data\redis-unstable\src\asciilogo.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\ziplist.h">
+    <ClInclude Include="..\data\redis-unstable\src\atomicvar.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\zipmap.h">
+    <ClInclude Include="..\data\redis-unstable\src\bio.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\crc64.h">
+    <ClInclude Include="..\data\redis-unstable\src\cluster.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\endian.h">
+    <ClInclude Include="..\data\redis-unstable\src\config.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\intset.h">
+    <ClInclude Include="..\data\redis-unstable\src\crc64.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\nx_buf.h">
+    <ClInclude Include="..\data\redis-unstable\src\debugmacro.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\rdb_parser.h">
+    <ClInclude Include="..\data\redis-unstable\src\dict.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\rdb_parser_def.h">
+    <ClInclude Include="..\data\redis-unstable\src\endianconv.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_header.h">
+    <ClInclude Include="..\data\redis-unstable\src\fmacros.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_helper.h">
+    <ClInclude Include="..\data\redis-unstable\src\geo.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_factory.h">
+    <ClInclude Include="..\data\redis-unstable\src\geohash.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_footer.h">
+    <ClInclude Include="..\data\redis-unstable\src\geohash_helper.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\nx_array.h">
+    <ClInclude Include="..\data\redis-unstable\src\help.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_body.h">
+    <ClInclude Include="..\data\redis-unstable\src\intset.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\node_builder.h">
+    <ClInclude Include="..\data\redis-unstable\src\latency.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_node_detail_kv.h">
+    <ClInclude Include="..\data\redis-unstable\src\listpack.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_string_value.h">
+    <ClInclude Include="..\data\redis-unstable\src\listpack_malloc.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_intset_value.h">
+    <ClInclude Include="..\data\redis-unstable\src\lzf.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_list_or_set_value.h">
+    <ClInclude Include="..\data\redis-unstable\src\lzfP.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_zipmap_value.h">
+    <ClInclude Include="..\data\redis-unstable\src\pqsort.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_hash_or_zset_value.h">
+    <ClInclude Include="..\data\redis-unstable\src\quicklist.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_zl_list_value.h">
+    <ClInclude Include="..\data\redis-unstable\src\rand.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_zl_hash_value.h">
+    <ClInclude Include="..\data\redis-unstable\src\rax.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_lzf_string_value.h">
+    <ClInclude Include="..\data\redis-unstable\src\rax_malloc.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\mysnprintf.h">
+    <ClInclude Include="..\data\redis-unstable\src\rdb.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\fast_memcpy.h">
+    <ClInclude Include="..\data\redis-unstable\src\redisassert.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\build_node_detail_kv_val.h">
+    <ClInclude Include="..\data\redis-unstable\src\redismodule.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\bip_buf.h">
+    <ClInclude Include="..\data\redis-unstable\src\rio.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\sds.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\sdsalloc.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\server.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\sha1.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\slowlog.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\solarisfixes.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\sparkline.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\stream.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\testhelp.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\util.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\version.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\ziplist.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\zipmap.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\zmalloc.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\adlist.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\data\redis-unstable\src\ae.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\data\redis-unstable\src\Makefile">
+      <Filter>src</Filter>
+    </None>
+    <None Include="..\data\redis-unstable\src\mkreleasehdr.sh">
+      <Filter>src</Filter>
+    </None>
+    <None Include="..\data\redis-unstable\src\redis-trib.rb">
+      <Filter>src</Filter>
+    </None>
+    <None Include="..\data\redis-unstable\src\valgrind.sup">
+      <Filter>src</Filter>
+    </None>
   </ItemGroup>
 </Project>

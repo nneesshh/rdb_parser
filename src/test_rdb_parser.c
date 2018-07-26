@@ -197,7 +197,8 @@ int main(int argc, char* argv[]) {
 	count = 10;
 	tmstart = time(NULL);
 
-	rp = create_rdb_parser(on_build_object, &fb);
+	rp = create_rdb_parser();
+	rdb_parse_bind_walk_cb(rp, on_build_object, &fb);
 
 	for (i = 0; i < count; ++i) {
 

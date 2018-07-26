@@ -16,12 +16,20 @@
 #define RDB_PARSER_OBJECT_POOL_SIZE   4096
 
 enum PARSE_RDB {
-    PARSE_RDB_IDLE = 0,
-    PARSE_RDB_HEADER,
-    PARSE_RDB_BODY,
-    PARSE_RDB_FOOTER,
-    PARSE_RDB_OVER,
+	PARSE_RDB_IDLE = 0,
+	PARSE_RDB_HEADER,
+	PARSE_RDB_BODY,
+	PARSE_RDB_FOOTER,
+	PARSE_RDB_OVER,
 };
+
+int 
+__default_walk_rdb_object(rdb_object_t *o, void *payload)
+{
+	(void *)payload;
+	fprintf(stderr, "\n[__default_walk_rdb_object()] not bind any walk cb yet!!!\n");
+	return -1;
+}
 
 rdb_parser_t *
 create_rdb_parser(func_walk_rdb_object cb, void *payload)
@@ -44,7 +52,7 @@ create_rdb_parser(func_walk_rdb_object cb, void *payload)
 	rdb_object_init(rp->o);
 
 	rp->o_pool = nx_create_pool(RDB_PARSER_OBJECT_POOL_SIZE);
-	rp->o_cb = NULL;
+	rp->o_cb = __default_walk_rdb_object;
 	rp->o_payload = NULL;
 
     return rp;
